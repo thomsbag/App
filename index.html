@@ -207,6 +207,11 @@ nav {
 .mapping-card h3 { font-size: 14px; font-weight: 600; margin-bottom: 14px; }
 .mapping-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
 .mapping-label { font-size: 12px; font-weight: 500; width: 120px; flex-shrink: 0; }
+.mapping-field { margin-bottom: 10px; }
+.mapping-field .mapping-row { margin-bottom: 3px; }
+.mapping-sample { font-size: 11px; color: var(--income); padding: 0 0 0 4px; min-height: 14px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mapping-sample.warn { color: var(--expense); }
+.mapping-sample.empty { color: var(--muted); font-style: italic; }
 .mapping-select {
   flex: 1; padding: 7px 10px; border: 1px solid var(--border); border-radius: 8px;
   background: var(--bg); font-size: 12px; color: var(--text); font-family: 'Satoshi', sans-serif; outline: none;
@@ -526,12 +531,30 @@ nav {
     <div class="mapping-card">
       <h3>Mapper les colonnes</h3>
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Associez les colonnes de votre fichier aux champs de l'app.</p>
-      <div class="mapping-row"><span class="mapping-label">📅 Date</span><select class="mapping-select" id="map-date"></select></div>
-      <div class="mapping-row"><span class="mapping-label">📝 Libellé</span><select class="mapping-select" id="map-label"></select></div>
-      <div class="mapping-row"><span class="mapping-label" style="font-size:11px;color:var(--muted)">↩ Libellé secours</span><select class="mapping-select" id="map-label-fallback"><option value="">— Aucune —</option></select></div>
-      <div class="mapping-row"><span class="mapping-label">💶 Montant</span><select class="mapping-select" id="map-amount"></select></div>
-      <div class="mapping-row"><span class="mapping-label">🏷 Catégorie</span><select class="mapping-select" id="map-cat"><option value="">— Aucune —</option></select></div>
-      <div class="mapping-row"><span class="mapping-label">🔖 Sous-catégorie</span><select class="mapping-select" id="map-subcat"><option value="">— Aucune —</option></select></div>
+      <div class="mapping-field">
+        <div class="mapping-row"><span class="mapping-label">📅 Date</span><select class="mapping-select" id="map-date" onchange="updateMappingPreview('map-date','sample-date')"></select></div>
+        <div class="mapping-sample" id="sample-date"></div>
+      </div>
+      <div class="mapping-field">
+        <div class="mapping-row"><span class="mapping-label">📝 Libellé</span><select class="mapping-select" id="map-label" onchange="updateMappingPreview('map-label','sample-label')"></select></div>
+        <div class="mapping-sample" id="sample-label"></div>
+      </div>
+      <div class="mapping-field">
+        <div class="mapping-row"><span class="mapping-label" style="font-size:11px;color:var(--muted)">↩ Libellé secours</span><select class="mapping-select" id="map-label-fallback" onchange="updateMappingPreview('map-label-fallback','sample-label-fallback')"><option value="">— Aucune —</option></select></div>
+        <div class="mapping-sample" id="sample-label-fallback"></div>
+      </div>
+      <div class="mapping-field">
+        <div class="mapping-row"><span class="mapping-label">💶 Montant</span><select class="mapping-select" id="map-amount" onchange="updateMappingPreview('map-amount','sample-amount')"></select></div>
+        <div class="mapping-sample" id="sample-amount"></div>
+      </div>
+      <div class="mapping-field">
+        <div class="mapping-row"><span class="mapping-label">🏷 Catégorie</span><select class="mapping-select" id="map-cat" onchange="updateMappingPreview('map-cat','sample-cat')"><option value="">— Aucune —</option></select></div>
+        <div class="mapping-sample" id="sample-cat"></div>
+      </div>
+      <div class="mapping-field">
+        <div class="mapping-row"><span class="mapping-label">🔖 Sous-catégorie</span><select class="mapping-select" id="map-subcat" onchange="updateMappingPreview('map-subcat','sample-subcat')"><option value="">— Aucune —</option></select></div>
+        <div class="mapping-sample" id="sample-subcat"></div>
+      </div>
       <div class="mapping-row">
         <span class="mapping-label" style="font-size:11px;color:var(--muted)">Séparateur décimal</span>
         <select class="mapping-select" id="map-decimal">
@@ -1258,32 +1281,133 @@ function processFile(file) {
   reader.readAsBinaryString(file);
 }
 
+// Smart column scorer — returns best column index or -1
+function scoreColumn(fieldType, headers, rows) {
+  // Rules: array of [regex, score] — highest score wins
+  // Also uses data heuristics on actual values
+  const rules = {
+    'date':    [[/date.*op/i,12],[/date.*val/i,10],[/^date$/i,9],[/date/i,6],[/jour/i,5],[/day/i,4],[/period/i,3]],
+    'label':   [[/libell/i,12],[/communication/i,11],[/intitul/i,10],[/description/i,9],[/details?/i,8],[/label/i,7],[/nom.*op/i,7],[/commentaire/i,6],[/motif/i,6],[/objet/i,5]],
+    'fallback':[[/details?/i,12],[/communication/i,11],[/commentaire/i,10],[/motif/i,9],[/reference/i,8],[/tiers/i,7],[/virement/i,6],[/ref/i,4]],
+    'amount':  [[/montant(?!.*devise)/i,12],[/amount/i,11],[/somme/i,10],[/valeur/i,8],[/debit/i,7],[/credit/i,7],[/net/i,5]],
+    'cat':     [[/^cat[eé]/i,12],[/cat[eé]gor/i,11],[/famille/i,7],[/type/i,4]],
+    'subcat':  [[/sous.cat/i,12],[/sub.cat/i,11],[/sous/i,7],[/sub/i,5],[/detail.*cat/i,8]],
+  };
+
+  const fieldRules = rules[fieldType] || [];
+  let best = -1, bestScore = -1;
+
+  headers.forEach((h, i) => {
+    let score = 0;
+    fieldRules.forEach(([regex, s]) => { if(regex.test(h)) score = Math.max(score, s); });
+
+    // Data heuristics using first non-empty rows
+    const samples = rows.slice(0,5).map(r=>String(r[i]||'')).filter(Boolean);
+    if(samples.length > 0) {
+      if(fieldType === 'date') {
+        const looksLikeDate = samples.filter(s=>/\d{1,2}[\/\-\.]\d{1,2}[\/\-\.]\d{2,4}|\d{4}-\d{2}-\d{2}/.test(s)).length;
+        score += looksLikeDate * 3;
+      }
+      if(fieldType === 'amount') {
+        const looksLikeNum = samples.filter(s=>/^-?[\d\s]+[,.]?\d*$/.test(s.replace(/[€$£\s]/g,''))).length;
+        score += looksLikeNum * 2;
+        // Penalize if looks like a date or pure text
+        const looksLikeDate = samples.filter(s=>/\d{1,2}[\/\-\.]\d{1,2}/.test(s)).length;
+        score -= looksLikeDate * 5;
+        const looksLikeText = samples.filter(s=>/[a-zA-Z]{4,}/.test(s)).length;
+        score -= looksLikeText * 4;
+      }
+      if((fieldType==='label'||fieldType==='fallback')) {
+        const looksLikeText = samples.filter(s=>/[a-zA-ZÀ-ÿ]{3,}/.test(s)).length;
+        score += looksLikeText * 2;
+        // Penalize if looks numeric
+        const looksLikeNum = samples.filter(s=>/^-?[\d\s]+[,.]?\d*$/.test(s)).length;
+        score -= looksLikeNum * 4;
+      }
+    }
+
+    if(score > bestScore) { bestScore = score; best = i; }
+  });
+
+  return bestScore > 0 ? best : -1;
+}
+
+function updateMappingPreview(selectId, sampleId) {
+  const sel = document.getElementById(selectId);
+  const sampleEl = document.getElementById(sampleId);
+  if(!sampleEl) return;
+  const idx = sel.value;
+  if(idx === '' || idx === null) { sampleEl.textContent = ''; return; }
+  const colIdx = parseInt(idx);
+  const samples = state.rawData.slice(0,3).map(r=>String(r[colIdx]||'')).filter(Boolean);
+  if(!samples.length) {
+    sampleEl.className = 'mapping-sample empty';
+    sampleEl.textContent = 'Colonne vide';
+    return;
+  }
+  sampleEl.className = 'mapping-sample';
+  sampleEl.textContent = '↳ ' + samples.slice(0,2).join('  ·  ');
+}
+
+function updateAllSamples() {
+  const fields = [
+    ['map-date','sample-date'],['map-label','sample-label'],['map-label-fallback','sample-label-fallback'],
+    ['map-amount','sample-amount'],['map-cat','sample-cat'],['map-subcat','sample-subcat']
+  ];
+  fields.forEach(([sel,samp]) => updateMappingPreview(sel, samp));
+}
+
 function showMappingUI() {
   document.getElementById('drop-zone').style.display='none';
   document.getElementById('mapping-section').style.display='block';
-  ['map-date','map-label','map-label-fallback','map-amount','map-cat','map-subcat'].forEach(id=>{
-    const sel=document.getElementById(id);
-    const optional=id==='map-cat'||id==='map-subcat';
-    sel.innerHTML=(optional?'<option value="">— Aucune —</option>':'')+
-      state.rawHeaders.map((h,i)=>`<option value="${i}">${h}</option>`).join('');
-    state.rawHeaders.forEach((h,i)=>{
-      if(id==='map-date'&&/date|jour|day/i.test(h))sel.value=i;
-      if(id==='map-label'&&/libel|label|desc|intit|nom|comm/i.test(h))sel.value=i;
-      if(id==='map-amount'&&/mont|amount|valeur|somme|debit|credit/i.test(h))sel.value=i;
-      if(id==='map-cat'&&/cat/i.test(h))sel.value=i;
-      if(id==='map-subcat'&&/sous|sub/i.test(h))sel.value=i;
-      if(id==='map-label-fallback'&&/libel2|label2|comm|ref|virement|tiers/i.test(h))sel.value=i;
-    });
+
+  const headers = state.rawHeaders;
+  const rows = state.rawData;
+
+  // Score each field independently
+  const detected = {
+    'map-date':           scoreColumn('date', headers, rows),
+    'map-label':          scoreColumn('label', headers, rows),
+    'map-label-fallback': scoreColumn('fallback', headers, rows),
+    'map-amount':         scoreColumn('amount', headers, rows),
+    'map-cat':            scoreColumn('cat', headers, rows),
+    'map-subcat':         scoreColumn('subcat', headers, rows),
+  };
+
+  // Avoid label-fallback = label (pick next best if same)
+  if(detected['map-label-fallback'] === detected['map-label']) {
+    // Try next best for fallback
+    const fbRules = [/details?/i,/communication/i,/commentaire/i,/motif/i,/reference/i,/tiers/i,/remarque/i];
+    const altFb = headers.findIndex((h,i) => i !== detected['map-label'] && fbRules.some(r=>r.test(h)));
+    detected['map-label-fallback'] = altFb >= 0 ? altFb : -1;
+  }
+
+  const optionalFields = new Set(['map-cat','map-subcat','map-label-fallback']);
+
+  ['map-date','map-label','map-label-fallback','map-amount','map-cat','map-subcat'].forEach(id => {
+    const sel = document.getElementById(id);
+    const isOptional = optionalFields.has(id);
+    sel.innerHTML = (isOptional ? '<option value="">— Aucune —</option>' : '') +
+      headers.map((h,i) => `<option value="${i}">${h}</option>`).join('');
+    const best = detected[id];
+    if(best >= 0) sel.value = best;
+    else if(isOptional) sel.value = '';
   });
-  // Preview
-  const previewCard=document.getElementById('preview-card');
-  previewCard.style.display='block';
-  const preview=state.rawData.slice(0,4);
-  let html='<table style="border-collapse:collapse;width:100%"><tr>'+
-    state.rawHeaders.map(h=>`<th style="text-align:left;padding:3px 6px;font-size:10px;color:var(--muted);white-space:nowrap">${h}</th>`).join('')+'</tr>';
-  preview.forEach(row=>{html+='<tr>'+row.map(cell=>`<td style="padding:3px 6px;font-size:11px;border-top:1px solid var(--border);white-space:nowrap;max-width:120px;overflow:hidden;text-overflow:ellipsis">${cell}</td>`).join('')+'</tr>';});
-  html+='</table>';
-  document.getElementById('preview-table').innerHTML=html;
+
+  // Show samples under each field
+  updateAllSamples();
+
+  // Preview table (compact, 3 rows)
+  const previewCard = document.getElementById('preview-card');
+  previewCard.style.display = 'block';
+  const preview = rows.slice(0,3);
+  let html = '<table style="border-collapse:collapse;width:100%"><tr>' +
+    headers.map(h=>`<th style="text-align:left;padding:3px 6px;font-size:10px;color:var(--muted);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis">${h}</th>`).join('') + '</tr>';
+  preview.forEach(row => {
+    html += '<tr>' + row.map(cell=>`<td style="padding:3px 6px;font-size:11px;border-top:1px solid var(--border);white-space:nowrap;max-width:90px;overflow:hidden;text-overflow:ellipsis">${cell}</td>`).join('') + '</tr>';
+  });
+  html += '</table>';
+  document.getElementById('preview-table').innerHTML = html;
 }
 
 function parseAmount(val,decimal) {
