@@ -1010,6 +1010,11 @@ function parseDate(val) {
   return null;
 }
 
+// Clé de déduplication : date + libellé normalisé + montant arrondi
+function dedupKey(date, label, amount) {
+  return `${date}|${label.toLowerCase().trim().replace(/\s+/g,' ')}|${Math.round(amount*100)}`;
+}
+
 function importData() {
   const iDate=document.getElementById('map-date').value;
   const iLabel=document.getElementById('map-label').value;
@@ -1018,15 +1023,28 @@ function importData() {
   const iSubcat=document.getElementById('map-subcat').value;
   const decimal=document.getElementById('map-decimal').value;
   if(iDate===''||iLabel===''||iAmount===''){toast('Mappez au minimum Date, Libellé et Montant');return;}
-  let imported=0,skipped=0;
+
+  // Construire l'index des transactions existantes
+  const existingKeys = new Set(
+    state.transactions.map(tx => dedupKey(tx.date, tx.label, tx.amount))
+  );
+
+  let imported=0, skipped=0, duplicates=0;
   const newTxs=[];
+
   state.rawData.forEach(row=>{
     const rawAmount=row[parseInt(iAmount)];
     const amount=parseAmount(rawAmount,decimal);
     if(amount===null||amount===0){skipped++;return;}
-    const date=parseDate(row[parseInt(iDate)]);
+    const date=parseDate(row[parseInt(iDate)]) || new Date().toISOString().split('T')[0];
     const label=String(row[parseInt(iLabel)]||'').trim();
     if(!label){skipped++;return;}
+
+    // Vérification doublon
+    const key = dedupKey(date, label, amount);
+    if(existingKeys.has(key)){duplicates++;return;}
+    existingKeys.add(key); // évite aussi les doublons dans le fichier lui-même
+
     const catName=iCat?String(row[parseInt(iCat)]||'').trim():'';
     const subcatName=iSubcat?String(row[parseInt(iSubcat)]||'').trim():'';
     if(catName&&!getCat(catName))
@@ -1035,16 +1053,22 @@ function importData() {
     let type='expense';
     const rawNum=typeof rawAmount==='number'?rawAmount:parseFloat(String(rawAmount).replace(/[^\d\-\.,]/g,'').replace(',','.'));
     if(!isNaN(rawNum)&&rawNum>0)type='income';
-    newTxs.push({id:uuid(),date:date||new Date().toISOString().split('T')[0],label,amount,type,category:catName,subcategory:subcatName});
+    newTxs.push({id:uuid(),date,label,amount,type,category:catName,subcategory:subcatName});
     imported++;
   });
+
   state.transactions=[...state.transactions,...newTxs];
-  state.rawData=null;state.rawHeaders=[];
+  state.rawData=null; state.rawHeaders=[];
   saveState();
   resetImport();
   document.getElementById('import-stats-bar').style.display='block';
   document.getElementById('import-count-label').textContent=state.transactions.length+' transactions au total';
-  toast(`✓ ${imported} transactions importées${skipped?' ('+skipped+' ignorées)':''}`);
+
+  // Message détaillé
+  let msg = `✓ ${imported} importée${imported>1?'s':''}`;
+  if(duplicates>0) msg += ` · ${duplicates} doublon${duplicates>1?'s':''} ignoré${duplicates>1?'s':''}`;
+  if(skipped>0) msg += ` · ${skipped} invalide${skipped>1?'s':''}`;
+  toast(msg);
 }
 
 function resetImport() {
