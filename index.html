@@ -302,6 +302,22 @@ nav {
 .empty-state h3 { font-size: 16px; font-weight: 600; }
 .empty-state p { font-size: 13px; color: var(--muted); }
 
+
+/* ── INLINE EDIT ── */
+.cat-name-editable {
+  display: flex; align-items: center; gap: 8px; flex: 1; cursor: pointer;
+}
+.cat-name-editable:hover .edit-hint { opacity: 1; }
+.edit-hint { font-size: 11px; color: var(--muted); opacity: 0; transition: opacity 0.2s; }
+.subcat-badge { cursor: pointer; }
+.subcat-badge:hover { background: var(--surface2); }
+.reject-row { padding: 10px 0; border-bottom: 1px solid var(--border); }
+.reject-row:last-child { border-bottom: none; }
+.reject-reason { display: inline-block; font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 99px; margin-bottom: 4px; }
+.reject-reason.montant { background: #fdf0f0; color: var(--expense); }
+.reject-reason.libelle { background: #fff8e6; color: #b45309; }
+.reject-row-data { font-size: 11px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
 /* ── IMPORT STATS ── */
 .import-info { margin: 0 20px 14px; background: var(--surface); border-radius: var(--radius); padding: 14px 16px; }
 .import-info .ii-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 4px; }
@@ -547,6 +563,44 @@ nav {
     <div class="form-group"><label>Nom</label><input class="form-input" id="cat-name-input" type="text" placeholder="Ex: Alimentation"/></div>
     <div class="form-group"><label>Couleur</label><div class="color-row" id="color-picker"></div></div>
     <button class="btn-primary" onclick="submitNewCategory()" style="width:100%;margin:0">Créer</button>
+  </div>
+</div>
+
+
+<!-- Edit category -->
+<div class="modal-overlay" id="modal-edit-cat" onclick="closeModal('modal-edit-cat')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Modifier la catégorie</h3>
+    <input type="hidden" id="edit-cat-id"/>
+    <input type="hidden" id="edit-cat-old-name"/>
+    <div class="form-group"><label>Nom</label><input class="form-input" id="edit-cat-name" type="text"/></div>
+    <div class="form-group"><label>Couleur</label><div class="color-row" id="edit-color-picker"></div></div>
+    <div id="edit-cat-impact" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:10px;background:var(--surface);border-radius:8px;display:none"></div>
+    <button class="btn-primary" onclick="submitEditCategory()" style="width:100%;margin:0 0 10px">Enregistrer et propager</button>
+  </div>
+</div>
+
+<!-- Edit subcategory -->
+<div class="modal-overlay" id="modal-edit-subcat" onclick="closeModal('modal-edit-subcat')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Modifier la sous-catégorie</h3>
+    <input type="hidden" id="edit-subcat-cat-id"/>
+    <input type="hidden" id="edit-subcat-old-name"/>
+    <div class="form-group"><label>Nouveau nom</label><input class="form-input" id="edit-subcat-name" type="text"/></div>
+    <div id="edit-subcat-impact" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:10px;background:var(--surface);border-radius:8px;display:none"></div>
+    <button class="btn-primary" onclick="submitEditSubcat()" style="width:100%;margin:0 0 10px">Enregistrer et propager</button>
+  </div>
+</div>
+
+<!-- Import rejects debug -->
+<div class="modal-overlay" id="modal-rejects" onclick="closeModal('modal-rejects')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3>Lignes rejetées</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Ces lignes n'ont pas été importées. Corrigez votre fichier et réimportez.</p>
+    <div id="rejects-list"></div>
   </div>
 </div>
 
@@ -1024,26 +1078,31 @@ function importData() {
   const decimal=document.getElementById('map-decimal').value;
   if(iDate===''||iLabel===''||iAmount===''){toast('Mappez au minimum Date, Libellé et Montant');return;}
 
-  // Construire l'index des transactions existantes
   const existingKeys = new Set(
     state.transactions.map(tx => dedupKey(tx.date, tx.label, tx.amount))
   );
 
-  let imported=0, skipped=0, duplicates=0;
-  const newTxs=[];
+  let imported=0, duplicates=0;
+  const newTxs=[], rejects=[];
 
-  state.rawData.forEach(row=>{
+  state.rawData.forEach((row, rowIdx)=>{
     const rawAmount=row[parseInt(iAmount)];
+    const rawLabel=String(row[parseInt(iLabel)]||'').trim();
     const amount=parseAmount(rawAmount,decimal);
-    if(amount===null||amount===0){skipped++;return;}
-    const date=parseDate(row[parseInt(iDate)]) || new Date().toISOString().split('T')[0];
-    const label=String(row[parseInt(iLabel)]||'').trim();
-    if(!label){skipped++;return;}
 
-    // Vérification doublon
-    const key = dedupKey(date, label, amount);
+    if(amount===null||amount===0){
+      rejects.push({rowIdx:rowIdx+2, row, reason:'montant', detail:`Montant illisible ou nul : "${rawAmount}"`});
+      return;
+    }
+    if(!rawLabel){
+      rejects.push({rowIdx:rowIdx+2, row, reason:'libelle', detail:'Libellé vide'});
+      return;
+    }
+
+    const date=parseDate(row[parseInt(iDate)]) || new Date().toISOString().split('T')[0];
+    const key = dedupKey(date, rawLabel, amount);
     if(existingKeys.has(key)){duplicates++;return;}
-    existingKeys.add(key); // évite aussi les doublons dans le fichier lui-même
+    existingKeys.add(key);
 
     const catName=iCat?String(row[parseInt(iCat)]||'').trim():'';
     const subcatName=iSubcat?String(row[parseInt(iSubcat)]||'').trim():'';
@@ -1053,7 +1112,7 @@ function importData() {
     let type='expense';
     const rawNum=typeof rawAmount==='number'?rawAmount:parseFloat(String(rawAmount).replace(/[^\d\-\.,]/g,'').replace(',','.'));
     if(!isNaN(rawNum)&&rawNum>0)type='income';
-    newTxs.push({id:uuid(),date,label,amount,type,category:catName,subcategory:subcatName});
+    newTxs.push({id:uuid(),date,label:rawLabel,amount,type,category:catName,subcategory:subcatName});
     imported++;
   });
 
@@ -1064,11 +1123,40 @@ function importData() {
   document.getElementById('import-stats-bar').style.display='block';
   document.getElementById('import-count-label').textContent=state.transactions.length+' transactions au total';
 
-  // Message détaillé
+  // Show rejects button if any
+  const statsBar=document.getElementById('import-stats-bar');
+  const oldBtn=document.getElementById('rejects-debug-btn');
+  if(oldBtn)oldBtn.remove();
+  if(rejects.length>0){
+    state._lastRejects=rejects;
+    const btn=document.createElement('button');
+    btn.id='rejects-debug-btn';
+    btn.className='export-btn';
+    btn.style.cssText='background:#fff8f8;border-color:#fca5a5;color:var(--expense);margin-top:8px';
+    btn.innerHTML=`<span class="material-symbols-outlined" style="font-size:18px">bug_report</span> ${rejects.length} ligne${rejects.length>1?'s':''} rejetée${rejects.length>1?'s':''} — voir détail`;
+    btn.onclick=showRejects;
+    statsBar.appendChild(btn);
+  }
+
   let msg = `✓ ${imported} importée${imported>1?'s':''}`;
   if(duplicates>0) msg += ` · ${duplicates} doublon${duplicates>1?'s':''} ignoré${duplicates>1?'s':''}`;
-  if(skipped>0) msg += ` · ${skipped} invalide${skipped>1?'s':''}`;
+  if(rejects.length>0) msg += ` · ${rejects.length} rejetée${rejects.length>1?'s':''}`;
   toast(msg);
+}
+
+function showRejects(){
+  const rejects=state._lastRejects||[];
+  const el=document.getElementById('rejects-list');
+  el.innerHTML=rejects.map(r=>{
+    const cells=r.row.slice(0,6).map(c=>String(c||'—')).join(' · ');
+    return `<div class="reject-row">
+      <span class="reject-reason ${r.reason}">${r.reason==='montant'?'Montant invalide':'Libellé vide'}</span>
+      <div style="font-size:11px;font-weight:500;margin-bottom:2px">Ligne ${r.rowIdx} du fichier</div>
+      <div class="reject-row-data">${r.detail}</div>
+      <div class="reject-row-data" style="margin-top:2px;opacity:.7">${cells}</div>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-rejects').classList.add('open');
 }
 
 function resetImport() {
@@ -1109,40 +1197,136 @@ function exportXLSX() {
 function renderCategories() {
   const el=document.getElementById('cat-list');
   if(!state.categories.length){el.innerHTML=`<div class="empty-state"><span class="material-symbols-outlined">label</span><h3>Aucune catégorie</h3></div>`;return;}
-  el.innerHTML=state.categories.map(cat=>`
-    <div class="cat-item">
+  el.innerHTML=state.categories.map(cat=>{
+    const txCount = state.transactions.filter(t=>t.category===cat.name).length;
+    return `<div class="cat-item">
       <div class="cat-header">
-        <div class="cat-name-display">
+        <div class="cat-name-editable" onclick="openEditCatModal('${cat.id}')">
           <div class="cat-color-dot" style="background:${cat.color}"></div>
-          ${cat.name}
+          <span style="font-size:14px;font-weight:600">${cat.name}</span>
+          <span style="font-size:10px;color:var(--muted);margin-left:2px">${txCount>0?txCount+' tx':''}</span>
+          <span class="material-symbols-outlined edit-hint" style="font-size:14px;margin-left:auto">edit</span>
         </div>
-        <button onclick="deleteCategory('${cat.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:4px">✕</button>
+        <button onclick="event.stopPropagation();deleteCategory('${cat.id}')" style="background:none;border:none;cursor:pointer;color:var(--muted);font-size:17px;padding:4px 4px 4px 12px">✕</button>
       </div>
       <div class="subcat-list">
-        ${cat.subcategories.map(s=>`<div class="subcat-badge">${s}<span class="del-btn" onclick="deleteSubcat('${cat.id}','${s}')">×</span></div>`).join('')}
+        ${cat.subcategories.map(s=>{
+          const stxCount = state.transactions.filter(t=>t.category===cat.name&&t.subcategory===s).length;
+          return `<div class="subcat-badge" onclick="openEditSubcatModal('${cat.id}','${s.replace(/'/g,"\'")}')">
+            ${s}${stxCount>0?` <span style="font-size:9px;opacity:.6">${stxCount}</span>`:''}
+            <span class="del-btn" onclick="event.stopPropagation();deleteSubcat('${cat.id}','${s.replace(/'/g,"\'")}')">×</span>
+          </div>`;
+        }).join('')}
         <button class="add-subcat-btn" onclick="addSubcat('${cat.id}')">+ Ajouter</button>
       </div>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 
-function deleteCategory(id){state.categories=state.categories.filter(c=>c.id!==id);saveState();renderCategories();}
-function deleteSubcat(catId,sub){const cat=state.categories.find(c=>c.id===catId);if(cat){cat.subcategories=cat.subcategories.filter(s=>s!==sub);saveState();renderCategories();}}
+function deleteCategory(id){
+  const cat=state.categories.find(c=>c.id===id);
+  if(cat){
+    const txCount=state.transactions.filter(t=>t.category===cat.name).length;
+    if(txCount>0 && !confirm(`Supprimer "${cat.name}" ? Les ${txCount} transaction(s) associées perdront leur catégorie.`)) return;
+    state.transactions.forEach(t=>{if(t.category===cat.name){t.category='';t.subcategory='';}});
+  }
+  state.categories=state.categories.filter(c=>c.id!==id);
+  saveState();renderCategories();
+}
+function deleteSubcat(catId,sub){
+  const cat=state.categories.find(c=>c.id===catId);
+  if(cat){
+    cat.subcategories=cat.subcategories.filter(s=>s!==sub);
+    state.transactions.forEach(t=>{if(t.category===cat.name&&t.subcategory===sub)t.subcategory='';});
+    saveState();renderCategories();
+  }
+}
 function addSubcat(catId){
   const name=prompt('Nom de la sous-catégorie :');
   if(!name||!name.trim())return;
   const cat=state.categories.find(c=>c.id===catId);
   if(cat&&!cat.subcategories.includes(name.trim())){cat.subcategories.push(name.trim());saveState();renderCategories();}
 }
+
+// ── EDIT CATEGORY ──
+function openEditCatModal(catId){
+  const cat=state.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  document.getElementById('edit-cat-id').value=catId;
+  document.getElementById('edit-cat-old-name').value=cat.name;
+  document.getElementById('edit-cat-name').value=cat.name;
+  document.getElementById('edit-color-picker').innerHTML=CAT_COLORS.map((c,i)=>`<div class="color-swatch${c===cat.color?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectEditColor(this)"></div>`).join('');
+  const txCount=state.transactions.filter(t=>t.category===cat.name).length;
+  const impactEl=document.getElementById('edit-cat-impact');
+  if(txCount>0){
+    impactEl.style.display='block';
+    impactEl.innerHTML=`✏️ Le renommage mettra à jour <strong>${txCount} transaction${txCount>1?'s':''}</strong> associées.`;
+  } else {
+    impactEl.style.display='none';
+  }
+  document.getElementById('modal-edit-cat').classList.add('open');
+}
+function selectEditColor(el){document.querySelectorAll('#edit-color-picker .color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');}
+function submitEditCategory(){
+  const id=document.getElementById('edit-cat-id').value;
+  const oldName=document.getElementById('edit-cat-old-name').value;
+  const newName=document.getElementById('edit-cat-name').value.trim();
+  if(!newName){toast('Entrez un nom');return;}
+  const colorEl=document.querySelector('#edit-color-picker .color-swatch.selected');
+  const cat=state.categories.find(c=>c.id===id);
+  if(!cat)return;
+  const oldColor=cat.color;
+  cat.name=newName;
+  cat.color=colorEl?colorEl.dataset.color:cat.color;
+  // Propagate rename to all transactions
+  let updated=0;
+  state.transactions.forEach(t=>{if(t.category===oldName){t.category=newName;updated++;}});
+  saveState();closeModal('modal-edit-cat');renderCategories();
+  toast(updated>0?`✓ Catégorie renommée · ${updated} transaction${updated>1?'s':''} mises à jour`:'✓ Catégorie mise à jour');
+}
+
+// ── EDIT SUBCATEGORY ──
+function openEditSubcatModal(catId, subName){
+  const cat=state.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  document.getElementById('edit-subcat-cat-id').value=catId;
+  document.getElementById('edit-subcat-old-name').value=subName;
+  document.getElementById('edit-subcat-name').value=subName;
+  const txCount=state.transactions.filter(t=>t.category===cat.name&&t.subcategory===subName).length;
+  const impactEl=document.getElementById('edit-subcat-impact');
+  if(txCount>0){
+    impactEl.style.display='block';
+    impactEl.innerHTML=`✏️ Le renommage mettra à jour <strong>${txCount} transaction${txCount>1?'s':''}</strong> associées.`;
+  } else {
+    impactEl.style.display='none';
+  }
+  document.getElementById('modal-edit-subcat').classList.add('open');
+}
+function submitEditSubcat(){
+  const catId=document.getElementById('edit-subcat-cat-id').value;
+  const oldName=document.getElementById('edit-subcat-old-name').value;
+  const newName=document.getElementById('edit-subcat-name').value.trim();
+  if(!newName){toast('Entrez un nom');return;}
+  const cat=state.categories.find(c=>c.id===catId);
+  if(!cat)return;
+  const idx=cat.subcategories.indexOf(oldName);
+  if(idx>=0)cat.subcategories[idx]=newName;
+  let updated=0;
+  state.transactions.forEach(t=>{if(t.category===cat.name&&t.subcategory===oldName){t.subcategory=newName;updated++;}});
+  saveState();closeModal('modal-edit-subcat');renderCategories();
+  toast(updated>0?`✓ Sous-catégorie renommée · ${updated} transaction${updated>1?'s':''} mises à jour`:'✓ Sous-catégorie mise à jour');
+}
+
 function openCatModal(){
   document.getElementById('cat-name-input').value='';
   document.getElementById('color-picker').innerHTML=CAT_COLORS.map((c,i)=>`<div class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectColor(this)"></div>`).join('');
   document.getElementById('modal-cat').classList.add('open');
 }
-function selectColor(el){document.querySelectorAll('.color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');}
+function selectColor(el){document.querySelectorAll('#color-picker .color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');}
 function submitNewCategory(){
   const name=document.getElementById('cat-name-input').value.trim();
   if(!name){toast('Entrez un nom');return;}
-  const colorEl=document.querySelector('.color-swatch.selected');
+  const colorEl=document.querySelector('#color-picker .color-swatch.selected');
   state.categories.push({id:uuid(),name,color:colorEl?colorEl.dataset.color:CAT_COLORS[0],subcategories:[]});
   saveState();closeModal('modal-cat');renderCategories();toast('Catégorie créée !');
 }
