@@ -305,6 +305,44 @@ nav {
 .empty-state p { font-size: 13px; color: var(--muted); }
 
 
+
+
+/* ── RULES ── */
+.rule-card { padding: 12px 0; border-bottom: 1px solid var(--border); display: flex; align-items: flex-start; gap: 12px; }
+.rule-card:last-child { border-bottom: none; }
+.rule-toggle { width: 36px; height: 20px; border-radius: 99px; background: var(--border); position: relative; cursor: pointer; flex-shrink: 0; margin-top: 2px; transition: background .2s; }
+.rule-toggle.on { background: var(--income); }
+.rule-toggle-knob { width: 16px; height: 16px; border-radius: 99px; background: white; position: absolute; top: 2px; left: 2px; transition: transform .2s; box-shadow: 0 1px 3px rgba(0,0,0,.2); }
+.rule-toggle.on .rule-toggle-knob { transform: translateX(16px); }
+.rule-body { flex: 1; min-width: 0; }
+.rule-pattern { font-size: 13px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rule-meta { font-size: 11px; color: var(--muted); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rule-actions { display: flex; gap: 8px; flex-shrink: 0; }
+.rule-action-btn { width: 28px; height: 28px; border-radius: 7px; border: none; background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; color: var(--muted); }
+.rule-action-btn .material-symbols-outlined { font-size: 15px; }
+.suggestion-row { padding: 12px; border-radius: 10px; background: var(--surface); margin-bottom: 8px; }
+.suggestion-row h4 { font-size: 13px; font-weight: 600; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suggestion-meta { font-size: 11px; color: var(--muted); margin-bottom: 10px; }
+.suggestion-actions { display: flex; gap: 8px; }
+.sug-btn { flex: 1; padding: 7px; border-radius: 8px; border: none; font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+.sug-btn-accept { background: var(--text); color: white; }
+.sug-btn-edit { background: var(--surface2); color: var(--text); }
+.sug-btn-dismiss { background: none; color: var(--muted); border: 1px solid var(--border) !important; }
+
+/* ── HEX COLOR PICKER ── */
+.color-picker-wrap { display: flex; flex-direction: column; gap: 10px; }
+.color-hex-row { display: flex; align-items: center; gap: 10px; }
+.color-preview-swatch { width: 36px; height: 36px; border-radius: 9px; flex-shrink: 0; border: 1px solid var(--border); transition: background 0.15s; }
+.color-hex-input {
+  flex: 1; padding: 8px 12px; border: 1px solid var(--border); border-radius: 10px;
+  font-size: 14px; font-family: 'Space Grotesk', sans-serif; color: var(--text);
+  background: var(--bg); outline: none; letter-spacing: 0.05em; transition: border-color 0.2s;
+}
+.color-hex-input:focus { border-color: var(--text); }
+.color-native-btn { width: 36px; height: 36px; border-radius: 9px; border: 1px solid var(--border); background: var(--surface); cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; position: relative; }
+.color-native-btn input[type=color] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+.color-native-btn .material-symbols-outlined { font-size: 18px; color: var(--muted); pointer-events: none; }
+
 /* ── DRILLDOWN ── */
 .drill-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); gap:10px; overflow:hidden; }
 .drill-row:last-child { border-bottom:none; }
@@ -490,6 +528,7 @@ nav {
       <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Associez les colonnes de votre fichier aux champs de l'app.</p>
       <div class="mapping-row"><span class="mapping-label">📅 Date</span><select class="mapping-select" id="map-date"></select></div>
       <div class="mapping-row"><span class="mapping-label">📝 Libellé</span><select class="mapping-select" id="map-label"></select></div>
+      <div class="mapping-row"><span class="mapping-label" style="font-size:11px;color:var(--muted)">↩ Libellé secours</span><select class="mapping-select" id="map-label-fallback"><option value="">— Aucune —</option></select></div>
       <div class="mapping-row"><span class="mapping-label">💶 Montant</span><select class="mapping-select" id="map-amount"></select></div>
       <div class="mapping-row"><span class="mapping-label">🏷 Catégorie</span><select class="mapping-select" id="map-cat"><option value="">— Aucune —</option></select></div>
       <div class="mapping-row"><span class="mapping-label">🔖 Sous-catégorie</span><select class="mapping-select" id="map-subcat"><option value="">— Aucune —</option></select></div>
@@ -520,6 +559,29 @@ nav {
   <div style="height:10px"></div>
 </div>
 
+
+<!-- ══════════ RÈGLES ══════════ -->
+<div class="screen" id="screen-rules">
+  <div style="padding:52px 20px 0;display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+    <h2 style="font-size:22px;font-weight:700">Règles auto</h2>
+    <button onclick="openSuggestionsModal()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:99px;border:1px solid var(--border);background:var(--surface);font-size:12px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif">
+      <span class="material-symbols-outlined" style="font-size:16px">auto_awesome</span> Suggestions
+    </button>
+  </div>
+  <div style="padding:0 20px 12px;font-size:12px;color:var(--muted);line-height:1.5">
+    Les règles s'appliquent automatiquement à l'import. Tu peux aussi les appliquer sur toutes tes transactions existantes.
+  </div>
+  <div id="rules-list" style="padding:0 20px"></div>
+  <div style="height:14px"></div>
+  <button class="btn-primary" onclick="openRuleModal(null)">
+    <span class="material-symbols-outlined">add</span> Nouvelle règle
+  </button>
+  <div style="height:10px"></div>
+  <button id="apply-rules-btn" class="btn-secondary" onclick="applyRulesRetroactively()" style="margin-bottom:10px">
+    <span class="material-symbols-outlined">refresh</span> Appliquer sur toutes les transactions
+  </button>
+</div>
+
 <!-- ══════════ NAV ══════════ -->
 <nav>
   <div class="nav-item active" id="nav-dashboard" onclick="nav('dashboard')">
@@ -541,6 +603,10 @@ nav {
   <div class="nav-item" id="nav-categories" onclick="nav('categories')">
     <span class="material-symbols-outlined">label</span>
     <p>Catégories</p>
+  </div>
+  <div class="nav-item" id="nav-rules" onclick="nav('rules')">
+    <span class="material-symbols-outlined">auto_fix_high</span>
+    <p>Règles</p>
   </div>
 </nav>
 
@@ -577,7 +643,20 @@ nav {
     <div class="modal-handle"></div>
     <h3>Nouvelle catégorie</h3>
     <div class="form-group"><label>Nom</label><input class="form-input" id="cat-name-input" type="text" placeholder="Ex: Alimentation"/></div>
-    <div class="form-group"><label>Couleur</label><div class="color-row" id="color-picker"></div></div>
+    <div class="form-group">
+      <label>Couleur</label>
+      <div class="color-picker-wrap">
+        <div class="color-hex-row">
+          <div class="color-preview-swatch" id="color-preview"></div>
+          <input class="color-hex-input" id="color-hex-input" type="text" placeholder="#F4A261" maxlength="7" oninput="onHexInput('color')"/>
+          <div class="color-native-btn" title="Choisir une couleur">
+            <input type="color" id="color-native" oninput="onNativeInput('color')"/>
+            <span class="material-symbols-outlined">colorize</span>
+          </div>
+        </div>
+        <div class="color-row" id="color-picker"></div>
+      </div>
+    </div>
     <button class="btn-primary" onclick="submitNewCategory()" style="width:100%;margin:0">Créer</button>
   </div>
 </div>
@@ -591,7 +670,20 @@ nav {
     <input type="hidden" id="edit-cat-id"/>
     <input type="hidden" id="edit-cat-old-name"/>
     <div class="form-group"><label>Nom</label><input class="form-input" id="edit-cat-name" type="text"/></div>
-    <div class="form-group"><label>Couleur</label><div class="color-row" id="edit-color-picker"></div></div>
+    <div class="form-group">
+      <label>Couleur</label>
+      <div class="color-picker-wrap">
+        <div class="color-hex-row">
+          <div class="color-preview-swatch" id="edit-color-preview"></div>
+          <input class="color-hex-input" id="edit-color-hex-input" type="text" placeholder="#F4A261" maxlength="7" oninput="onHexInput('edit-color')"/>
+          <div class="color-native-btn" title="Choisir une couleur">
+            <input type="color" id="edit-color-native" oninput="onNativeInput('edit-color')"/>
+            <span class="material-symbols-outlined">colorize</span>
+          </div>
+        </div>
+        <div class="color-row" id="edit-color-picker"></div>
+      </div>
+    </div>
     <div id="edit-cat-impact" style="font-size:12px;color:var(--muted);margin-bottom:14px;padding:10px;background:var(--surface);border-radius:8px;display:none"></div>
     <button class="btn-primary" onclick="submitEditCategory()" style="width:100%;margin:0 0 10px">Enregistrer et propager</button>
   </div>
@@ -636,6 +728,62 @@ nav {
   </div>
 </div>
 
+
+<!-- Rule editor -->
+<div class="modal-overlay" id="modal-rule" onclick="closeModal('modal-rule')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <h3 id="rule-modal-title">Nouvelle règle</h3>
+    <input type="hidden" id="rule-id"/>
+    <div class="form-group">
+      <label>Contrepartie / Libellé</label>
+      <input class="form-input" id="rule-pattern" type="text" placeholder="Ex: Netflix, SNCF, Monoprix…"/>
+    </div>
+    <div class="form-group">
+      <label>Type de correspondance</label>
+      <select class="form-input" id="rule-match-type">
+        <option value="contains">Contient</option>
+        <option value="exact">Exactement égal</option>
+        <option value="starts">Commence par</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Type transaction</label>
+        <select class="form-input" id="rule-tx-type">
+          <option value="">Tous</option>
+          <option value="expense">Sortie</option>
+          <option value="income">Entrée</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Catégorie cible</label>
+      <select class="form-input" id="rule-cat" onchange="updateRuleSubcat()">
+        <option value="">— Sans catégorie —</option>
+      </select>
+    </div>
+    <div class="form-group" style="margin-bottom:16px">
+      <label>Sous-catégorie cible</label>
+      <select class="form-input" id="rule-subcat">
+        <option value="">— Sans sous-catégorie —</option>
+      </select>
+    </div>
+    <div id="rule-preview-count" style="font-size:12px;color:var(--muted);padding:10px;background:var(--surface);border-radius:8px;margin-bottom:14px;display:none"></div>
+    <button class="btn-primary" onclick="saveRule()" style="width:100%;margin:0">Enregistrer</button>
+  </div>
+</div>
+
+<!-- Suggestions modal -->
+<div class="modal-overlay" id="modal-suggestions" onclick="closeModal('modal-suggestions')">
+  <div class="modal" onclick="event.stopPropagation()" style="max-height:85dvh">
+    <div class="modal-handle"></div>
+    <h3>Suggestions de règles</h3>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:16px">Basé sur tes transactions déjà catégorisées et les contreparties fréquentes sans catégorie.</p>
+    <div id="suggestions-list" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 </div>
 
@@ -664,6 +812,7 @@ let state = {
   rawData: null,
   rawHeaders: [],
   charts: {},
+  rules: [], // [{id, pattern, matchType:'contains'|'exact', type:'income'|'expense'|'', category, subcategory, enabled}]
 };
 
 // ═══════════════════════════════════════════════════════════
@@ -673,14 +822,17 @@ function saveState() {
   try {
     localStorage.setItem('fin2_tx', JSON.stringify(state.transactions));
     localStorage.setItem('fin2_cats', JSON.stringify(state.categories));
+    localStorage.setItem('fin2_rules', JSON.stringify(state.rules));
   } catch(e) {}
 }
 function loadState() {
   try {
     const tx = localStorage.getItem('fin2_tx');
     const cats = localStorage.getItem('fin2_cats');
+    const rules = localStorage.getItem('fin2_rules');
     if (tx) state.transactions = JSON.parse(tx);
     if (cats) state.categories = JSON.parse(cats);
+    if (rules) state.rules = JSON.parse(rules);
   } catch(e) {}
 }
 
@@ -713,6 +865,7 @@ function nav(screen) {
   if(screen==='transactions') renderTransactions();
   if(screen==='analytics') renderAnalytics();
   if(screen==='categories') renderCategories();
+  if(screen==='rules') { renderRules(); updateRulesBadge(); }
   if(screen==='import') renderImportScreen();
 }
 
@@ -837,6 +990,16 @@ function renderTransactions() {
 // ═══════════════════════════════════════════════════════════
 // TX DETAIL + EDIT
 // ═══════════════════════════════════════════════════════════
+function normLabel(label) {
+  // Normalize label for counterparty matching: lowercase, collapse spaces, remove numbers/IDs
+  return label.toLowerCase().replace(/[0-9a-f]{8,}/gi,'').replace(/\s+/g,' ').trim();
+}
+
+function getSameCounterparty(tx) {
+  const norm = normLabel(tx.label);
+  return state.transactions.filter(t => t.id !== tx.id && normLabel(t.label) === norm);
+}
+
 function openTxDetail(id) {
   const tx = state.transactions.find(t=>t.id===id);
   if(!tx) return;
@@ -845,30 +1008,41 @@ function openTxDetail(id) {
   const amtColor = isIncome?'var(--income)':'var(--expense)';
   const dateStr = tx.date ? new Date(tx.date).toLocaleDateString('fr-FR',{day:'numeric',month:'long',year:'numeric'}) : '—';
 
-  // Build cat options
   const catOpts = '<option value="">— Sans catégorie —</option>' +
     state.categories.map(c=>`<option value="${c.name}"${c.name===tx.category?' selected':''}>${c.name}</option>`).join('');
-
   const cat = getCat(tx.category);
   const subcatOpts = '<option value="">— Sans sous-catégorie —</option>' +
     (cat?cat.subcategories.map(s=>`<option value="${s}"${s===tx.subcategory?' selected':''}>${s}</option>`).join(''):'');
+
+  // Count same counterparty transactions
+  const sameCount = getSameCounterparty(tx).length;
+  const counterpartyBlock = sameCount > 0 ? `
+    <div onclick="toggleApplyAll()" id="apply-all-row" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:var(--surface);border-radius:10px;margin-bottom:16px;cursor:pointer;user-select:none">
+      <div>
+        <div style="font-size:13px;font-weight:600">Appliquer à toute la contrepartie</div>
+        <div style="font-size:11px;color:var(--muted);margin-top:2px">${sameCount} autre${sameCount>1?'s':''} transaction${sameCount>1?'s':''} avec le même libellé</div>
+      </div>
+      <div id="apply-all-toggle" style="width:42px;height:24px;border-radius:99px;background:var(--border);position:relative;transition:background .2s;flex-shrink:0">
+        <div style="width:20px;height:20px;border-radius:99px;background:white;position:absolute;top:2px;left:2px;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)" id="apply-all-knob"></div>
+      </div>
+    </div>` : '';
 
   document.getElementById('detail-content').innerHTML = `
     <div style="font-size:13px;color:var(--muted);margin-bottom:4px">${dateStr}</div>
     <div style="font-size:16px;font-weight:600;margin-bottom:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${tx.label}</div>
     <div class="detail-amount-big" style="color:${amtColor}">${amtStr}</div>
-
-    <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Modifier la catégorie</div>
+    <div style="font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Catégoriser</div>
     <div class="form-group" style="margin-bottom:10px">
       <label>Catégorie</label>
       <select class="form-input" id="detail-cat" onchange="updateDetailSubcat('${id}')">
         ${catOpts}
       </select>
     </div>
-    <div class="form-group" style="margin-bottom:16px">
+    <div class="form-group" style="margin-bottom:14px">
       <label>Sous-catégorie</label>
       <select class="form-input" id="detail-subcat">${subcatOpts}</select>
     </div>
+    ${counterpartyBlock}
     <button class="btn-primary" onclick="saveTxCategory('${id}')" style="width:100%;margin:0 0 10px">
       <span class="material-symbols-outlined">check</span> Enregistrer
     </button>
@@ -876,7 +1050,18 @@ function openTxDetail(id) {
       Supprimer cette transaction
     </button>
   `;
+  // Reset toggle state
+  window._applyAll = false;
   document.getElementById('modal-detail').classList.add('open');
+}
+
+function toggleApplyAll() {
+  window._applyAll = !window._applyAll;
+  const toggle = document.getElementById('apply-all-toggle');
+  const knob = document.getElementById('apply-all-knob');
+  if(!toggle||!knob) return;
+  toggle.style.background = window._applyAll ? 'var(--income)' : 'var(--border)';
+  knob.style.transform = window._applyAll ? 'translateX(18px)' : 'translateX(0)';
 }
 
 function updateDetailSubcat(txId) {
@@ -891,13 +1076,23 @@ function updateDetailSubcat(txId) {
 function saveTxCategory(id) {
   const tx = state.transactions.find(t=>t.id===id);
   if(!tx) return;
-  tx.category = document.getElementById('detail-cat').value;
-  tx.subcategory = document.getElementById('detail-subcat').value;
+  const newCat = document.getElementById('detail-cat').value;
+  const newSubcat = document.getElementById('detail-subcat').value;
+  tx.category = newCat;
+  tx.subcategory = newSubcat;
+  let updatedCount = 1;
+  if(window._applyAll) {
+    const same = getSameCounterparty(tx);
+    same.forEach(t => { t.category = newCat; t.subcategory = newSubcat; });
+    updatedCount += same.length;
+  }
   saveState();
   closeModal('modal-detail');
-  toast('Catégorie mise à jour !');
+  window._applyAll = false;
+  toast(updatedCount > 1 ? `✓ ${updatedCount} transactions mises à jour` : 'Catégorie mise à jour !');
   if(state.currentScreen==='dashboard') renderDashboard();
   if(state.currentScreen==='transactions') renderTransactions();
+  if(state.currentScreen==='analytics') renderAnalytics();
 }
 
 function deleteTx(id) {
@@ -957,13 +1152,22 @@ function renderPieChart() {
   const colors=labels.map(l=>getCatColor(l));
   destroyChart('pie');
   if(!labels.length){document.getElementById('pie-legend').innerHTML='<div style="font-size:12px;color:var(--muted)">Aucune dépense ce mois.</div>';return;}
-  const ctx=document.getElementById('chart-pie').getContext('2d');
+  const pieCanvas=document.getElementById('chart-pie');
+  const ctx=pieCanvas.getContext('2d');
+  const total=data.reduce((a,b)=>a+b,0);
   state.charts['pie']=new Chart(ctx,{
     type:'doughnut',
-    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
-    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`}}},cutout:'62%',responsive:true}
+    data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:2,borderColor:'#ffffff',hoverOffset:10,hoverBorderWidth:0}]},
+    options:{
+      plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>` ${ctx.label}: ${fmt(ctx.raw)} (${(ctx.raw/total*100).toFixed(1)}%)`}}},
+      cutout:'60%',responsive:true,
+      onClick:(evt,elements)=>{ if(elements.length>0) drillCategory(labels[elements[0].index],'expense',state.analyticsMonth); },
+      onHover:(evt,elements)=>{ pieCanvas.style.cursor=elements.length>0?'pointer':'default'; }
+    }
   });
-  document.getElementById('pie-legend').innerHTML=labels.map((l,i)=>`<div class="legend-item" style="cursor:pointer" onclick="drillCategory('${l.replace(/'/g,"\\'")}','expense',state.analyticsMonth)"><div class="legend-dot" style="background:${colors[i]}"></div>${l} ›</div>`).join('');
+  document.getElementById('pie-legend').innerHTML=
+    `<div style="text-align:center;width:100%;margin-bottom:8px"><span style="font-size:11px;color:var(--muted)">Total sorties</span><br><span style="font-family:'Space Grotesk',sans-serif;font-size:15px;font-weight:700;color:var(--expense)">${fmt(total)}</span></div>`+
+    labels.map((l,i)=>`<div class="legend-item" style="cursor:pointer" onclick="drillCategory('${l.replace(/'/g,"\'")}','expense',state.analyticsMonth)"><div class="legend-dot" style="background:${colors[i]}"></div>${l} ›</div>`).join('');
 }
 
 function renderLineChart() {
@@ -1057,7 +1261,7 @@ function processFile(file) {
 function showMappingUI() {
   document.getElementById('drop-zone').style.display='none';
   document.getElementById('mapping-section').style.display='block';
-  ['map-date','map-label','map-amount','map-cat','map-subcat'].forEach(id=>{
+  ['map-date','map-label','map-label-fallback','map-amount','map-cat','map-subcat'].forEach(id=>{
     const sel=document.getElementById(id);
     const optional=id==='map-cat'||id==='map-subcat';
     sel.innerHTML=(optional?'<option value="">— Aucune —</option>':'')+
@@ -1068,6 +1272,7 @@ function showMappingUI() {
       if(id==='map-amount'&&/mont|amount|valeur|somme|debit|credit/i.test(h))sel.value=i;
       if(id==='map-cat'&&/cat/i.test(h))sel.value=i;
       if(id==='map-subcat'&&/sous|sub/i.test(h))sel.value=i;
+      if(id==='map-label-fallback'&&/libel2|label2|comm|ref|virement|tiers/i.test(h))sel.value=i;
     });
   });
   // Preview
@@ -1108,6 +1313,7 @@ function dedupKey(date, label, amount) {
 function importData() {
   const iDate=document.getElementById('map-date').value;
   const iLabel=document.getElementById('map-label').value;
+  const iLabelFallback=document.getElementById('map-label-fallback').value;
   const iAmount=document.getElementById('map-amount').value;
   const iCat=document.getElementById('map-cat').value;
   const iSubcat=document.getElementById('map-subcat').value;
@@ -1123,7 +1329,8 @@ function importData() {
 
   state.rawData.forEach((row, rowIdx)=>{
     const rawAmount=row[parseInt(iAmount)];
-    const rawLabel=String(row[parseInt(iLabel)]||'').trim();
+    const rawLabelPrimary=String(row[parseInt(iLabel)]||'').trim();
+    const rawLabel=rawLabelPrimary || (iLabelFallback!==''?String(row[parseInt(iLabelFallback)]||'').trim():'');
     const amount=parseAmount(rawAmount,decimal);
 
     if(amount===null||amount===0){
@@ -1131,7 +1338,7 @@ function importData() {
       return;
     }
     if(!rawLabel){
-      rejects.push({rowIdx:rowIdx+2, row, reason:'libelle', detail:'Libellé vide'});
+      rejects.push({rowIdx:rowIdx+2, row, reason:'libelle', detail:iLabelFallback!==''?'Libellé vide (colonne principale et secours)':'Libellé vide (aucune colonne de secours configurée)'});
       return;
     }
 
@@ -1148,7 +1355,10 @@ function importData() {
     let type='expense';
     const rawNum=typeof rawAmount==='number'?rawAmount:parseFloat(String(rawAmount).replace(/[^\d\-\.,]/g,'').replace(',','.'));
     if(!isNaN(rawNum)&&rawNum>0)type='income';
-    newTxs.push({id:uuid(),date,label:rawLabel,amount,type,category:catName,subcategory:subcatName});
+    const newTx = {id:uuid(),date,label:rawLabel,amount,type,category:catName,subcategory:subcatName};
+    // Apply rules if no category from file
+    if(!newTx.category) applyRulesToTx(newTx);
+    newTxs.push(newTx);
     imported++;
   });
 
@@ -1291,7 +1501,10 @@ function openEditCatModal(catId){
   document.getElementById('edit-cat-id').value=catId;
   document.getElementById('edit-cat-old-name').value=cat.name;
   document.getElementById('edit-cat-name').value=cat.name;
-  document.getElementById('edit-color-picker').innerHTML=CAT_COLORS.map((c,i)=>`<div class="color-swatch${c===cat.color?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectEditColor(this)"></div>`).join('');
+  document.getElementById('edit-color-picker').innerHTML=CAT_COLORS.map((col,i)=>`<div class="color-swatch${col===cat.color?' selected':''}" style="background:${col}" data-color="${col}" onclick="selectEditColor(this)"></div>`).join('');
+  document.getElementById('edit-color-hex-input').value=cat.color;
+  document.getElementById('edit-color-preview').style.background=cat.color;
+  document.getElementById('edit-color-native').value=cat.color;
   const txCount=state.transactions.filter(t=>t.category===cat.name).length;
   const impactEl=document.getElementById('edit-cat-impact');
   if(txCount>0){
@@ -1302,18 +1515,25 @@ function openEditCatModal(catId){
   }
   document.getElementById('modal-edit-cat').classList.add('open');
 }
-function selectEditColor(el){document.querySelectorAll('#edit-color-picker .color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');}
+function selectEditColor(el){
+  document.querySelectorAll('#edit-color-picker .color-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  const color=el.dataset.color;
+  document.getElementById('edit-color-hex-input').value=color;
+  document.getElementById('edit-color-preview').style.background=color;
+  document.getElementById('edit-color-native').value=color;
+}
 function submitEditCategory(){
   const id=document.getElementById('edit-cat-id').value;
   const oldName=document.getElementById('edit-cat-old-name').value;
   const newName=document.getElementById('edit-cat-name').value.trim();
   if(!newName){toast('Entrez un nom');return;}
+  const hexVal=document.getElementById('edit-color-hex-input').value.trim();
   const colorEl=document.querySelector('#edit-color-picker .color-swatch.selected');
   const cat=state.categories.find(c=>c.id===id);
   if(!cat)return;
-  const oldColor=cat.color;
   cat.name=newName;
-  cat.color=colorEl?colorEl.dataset.color:cat.color;
+  cat.color=isValidHex(hexVal)?hexVal:(colorEl?colorEl.dataset.color:cat.color);
   // Propagate rename to all transactions
   let updated=0;
   state.transactions.forEach(t=>{if(t.category===oldName){t.category=newName;updated++;}});
@@ -1355,15 +1575,27 @@ function submitEditSubcat(){
 
 function openCatModal(){
   document.getElementById('cat-name-input').value='';
-  document.getElementById('color-picker').innerHTML=CAT_COLORS.map((c,i)=>`<div class="color-swatch${i===0?' selected':''}" style="background:${c}" data-color="${c}" onclick="selectColor(this)"></div>`).join('');
+  const defaultColor = CAT_COLORS[0];
+  document.getElementById('color-picker').innerHTML=CAT_COLORS.map((col,i)=>`<div class="color-swatch${i===0?' selected':''}" style="background:${col}" data-color="${col}" onclick="selectColor(this)"></div>`).join('');
+  document.getElementById('color-hex-input').value=defaultColor;
+  document.getElementById('color-preview').style.background=defaultColor;
+  document.getElementById('color-native').value=defaultColor;
   document.getElementById('modal-cat').classList.add('open');
 }
-function selectColor(el){document.querySelectorAll('#color-picker .color-swatch').forEach(s=>s.classList.remove('selected'));el.classList.add('selected');}
+function selectColor(el){
+  document.querySelectorAll('#color-picker .color-swatch').forEach(s=>s.classList.remove('selected'));
+  el.classList.add('selected');
+  const color=el.dataset.color;
+  document.getElementById('color-hex-input').value=color;
+  document.getElementById('color-preview').style.background=color;
+  document.getElementById('color-native').value=color;
+}
 function submitNewCategory(){
   const name=document.getElementById('cat-name-input').value.trim();
   if(!name){toast('Entrez un nom');return;}
-  const colorEl=document.querySelector('#color-picker .color-swatch.selected');
-  state.categories.push({id:uuid(),name,color:colorEl?colorEl.dataset.color:CAT_COLORS[0],subcategories:[]});
+  const hexVal=document.getElementById('color-hex-input').value.trim();
+  const color=isValidHex(hexVal)?hexVal:(document.querySelector('#color-picker .color-swatch.selected')?.dataset.color||CAT_COLORS[0]);
+  state.categories.push({id:uuid(),name,color,subcategories:[]});
   saveState();closeModal('modal-cat');renderCategories();toast('Catégorie créée !');
 }
 
@@ -1469,12 +1701,365 @@ function drillTopItem(catName, subcatName, month) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// COLOR PICKER HELPERS
+// ═══════════════════════════════════════════════════════════
+function isValidHex(hex) {
+  return /^#[0-9A-Fa-f]{6}$/.test(hex);
+}
+
+function onHexInput(prefix) {
+  // prefix = 'color' or 'edit-color'
+  let val = document.getElementById(prefix+'-hex-input').value.trim();
+  if(!val.startsWith('#')) val='#'+val;
+  document.getElementById(prefix+'-hex-input').value=val;
+  if(isValidHex(val)){
+    document.getElementById(prefix+'-preview').style.background=val;
+    document.getElementById(prefix+'-native').value=val;
+    // Deselect swatches since custom color
+    const pickerId = prefix==='color'?'color-picker':'edit-color-picker';
+    document.querySelectorAll('#'+pickerId+' .color-swatch').forEach(s=>{
+      s.classList.toggle('selected', s.dataset.color===val);
+    });
+  }
+}
+
+function onNativeInput(prefix) {
+  const val = document.getElementById(prefix+'-native').value;
+  document.getElementById(prefix+'-hex-input').value=val;
+  document.getElementById(prefix+'-preview').style.background=val;
+  const pickerId = prefix==='color'?'color-picker':'edit-color-picker';
+  document.querySelectorAll('#'+pickerId+' .color-swatch').forEach(s=>{
+    s.classList.toggle('selected', s.dataset.color===val);
+  });
+}
+
+
+// ═══════════════════════════════════════════════════════════
+// RULES ENGINE
+// ═══════════════════════════════════════════════════════════
+
+function matchesRule(tx, rule) {
+  if(!rule.enabled) return false;
+  if(rule.type && tx.type !== rule.type) return false;
+  const pat = rule.pattern.toLowerCase().trim();
+  const label = tx.label.toLowerCase().trim();
+  if(rule.matchType === 'exact') { if(label !== pat) return false; }
+  else if(rule.matchType === 'starts') { if(!label.startsWith(pat)) return false; }
+  else { if(!label.includes(pat)) return false; } // contains (default)
+  return true;
+}
+
+function applyRulesToTx(tx) {
+  for(const rule of state.rules) {
+    if(matchesRule(tx, rule)) {
+      tx.category = rule.category;
+      tx.subcategory = rule.subcategory;
+      return true;
+    }
+  }
+  return false;
+}
+
+function countRuleMatches(rule) {
+  return state.transactions.filter(tx => matchesRule(tx, rule)).length;
+}
+
+function applyRulesRetroactively() {
+  let updated = 0;
+  state.transactions.forEach(tx => { if(applyRulesToTx(tx)) updated++; });
+  saveState();
+  const screen = state.currentScreen;
+  if(screen === 'dashboard') renderDashboard();
+  if(screen === 'transactions') renderTransactions();
+  if(screen === 'analytics') renderAnalytics();
+  toast(updated > 0 ? `✓ ${updated} transaction${updated>1?'s':''} mises à jour` : 'Aucune transaction correspondante');
+}
+
+// ── RENDER RULES LIST ──
+function renderRules() {
+  const el = document.getElementById('rules-list');
+  if(!state.rules.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:32px 0">
+      <span class="material-symbols-outlined">auto_fix_high</span>
+      <h3>Aucune règle</h3>
+      <p>Créez des règles pour catégoriser automatiquement vos transactions à l'import.</p>
+    </div>`;
+    return;
+  }
+  el.innerHTML = state.rules.map(rule => {
+    const matchLabel = rule.matchType==='exact'?'= ':rule.matchType==='starts'?'^ ':'~ ';
+    const catStr = rule.category ? `→ ${rule.category}${rule.subcategory?' · '+rule.subcategory:''}` : '→ Sans catégorie';
+    const typeStr = rule.type ? (rule.type==='income'?'Entrées':'Sorties') : 'Toutes';
+    const matches = countRuleMatches(rule);
+    return `<div class="rule-card">
+      <div class="rule-toggle${rule.enabled?' on':''}" onclick="toggleRule('${rule.id}')">
+        <div class="rule-toggle-knob"></div>
+      </div>
+      <div class="rule-body">
+        <div class="rule-pattern">${matchLabel}"${rule.pattern}"</div>
+        <div class="rule-meta">${typeStr} · ${catStr} · ${matches} tx correspondante${matches>1?'s':''}</div>
+      </div>
+      <div class="rule-actions">
+        <button class="rule-action-btn" onclick="openRuleModal('${rule.id}')"><span class="material-symbols-outlined">edit</span></button>
+        <button class="rule-action-btn" onclick="deleteRule('${rule.id}')" style="color:var(--expense)"><span class="material-symbols-outlined">delete</span></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function toggleRule(id) {
+  const rule = state.rules.find(r=>r.id===id);
+  if(rule) { rule.enabled = !rule.enabled; saveState(); renderRules(); }
+}
+
+function deleteRule(id) {
+  state.rules = state.rules.filter(r=>r.id!==id);
+  saveState(); renderRules();
+  toast('Règle supprimée');
+}
+
+// ── RULE MODAL ──
+function openRuleModal(id) {
+  const rule = id ? state.rules.find(r=>r.id===id) : null;
+  document.getElementById('rule-modal-title').textContent = rule ? 'Modifier la règle' : 'Nouvelle règle';
+  document.getElementById('rule-id').value = id || '';
+  document.getElementById('rule-pattern').value = rule?.pattern || '';
+  document.getElementById('rule-match-type').value = rule?.matchType || 'contains';
+  document.getElementById('rule-tx-type').value = rule?.type || '';
+
+  const catSel = document.getElementById('rule-cat');
+  catSel.innerHTML = '<option value="">— Sans catégorie —</option>' +
+    state.categories.map(cat=>`<option value="${cat.name}"${cat.name===rule?.category?' selected':''}>${cat.name}</option>`).join('');
+
+  updateRuleSubcat(rule?.subcategory);
+  updateRulePreview();
+
+  // Live preview on pattern change
+  document.getElementById('rule-pattern').oninput = updateRulePreview;
+  document.getElementById('rule-match-type').onchange = updateRulePreview;
+  document.getElementById('rule-tx-type').onchange = updateRulePreview;
+
+  document.getElementById('modal-rule').classList.add('open');
+}
+
+function updateRuleSubcat(selectedSubcat) {
+  const catName = document.getElementById('rule-cat').value;
+  const cat = getCat(catName);
+  const sel = document.getElementById('rule-subcat');
+  sel.innerHTML = '<option value="">— Sans sous-catégorie —</option>' +
+    (cat ? cat.subcategories.map(s=>`<option value="${s}"${s===selectedSubcat?' selected':''}>${s}</option>`).join('') : '');
+}
+
+function updateRulePreview() {
+  const pat = document.getElementById('rule-pattern').value.trim();
+  const matchType = document.getElementById('rule-match-type').value;
+  const txType = document.getElementById('rule-tx-type').value;
+  const el = document.getElementById('rule-preview-count');
+  if(!pat) { el.style.display='none'; return; }
+  const tempRule = {enabled:true, pattern:pat, matchType, type:txType};
+  const count = state.transactions.filter(tx => matchesRule(tx, tempRule)).length;
+  el.style.display = 'block';
+  el.innerHTML = count > 0
+    ? `🎯 ${count} transaction${count>1?'s':''} correspondent déjà à cette règle dans ta DB`
+    : `Aucune transaction existante ne correspond à ce pattern`;
+  el.style.color = count > 0 ? 'var(--income)' : 'var(--muted)';
+}
+
+function saveRule() {
+  const id = document.getElementById('rule-id').value;
+  const pattern = document.getElementById('rule-pattern').value.trim();
+  if(!pattern) { toast('Entrez un pattern'); return; }
+  const rule = {
+    id: id || uuid(),
+    pattern,
+    matchType: document.getElementById('rule-match-type').value,
+    type: document.getElementById('rule-tx-type').value,
+    category: document.getElementById('rule-cat').value,
+    subcategory: document.getElementById('rule-subcat').value,
+    enabled: true,
+  };
+  if(id) {
+    const idx = state.rules.findIndex(r=>r.id===id);
+    if(idx >= 0) state.rules[idx] = rule;
+  } else {
+    state.rules.push(rule);
+  }
+  saveState();
+  closeModal('modal-rule');
+  renderRules();
+  toast(id ? 'Règle mise à jour !' : 'Règle créée !');
+}
+
+// ── SUGGESTIONS ENGINE ──
+function generateSuggestions() {
+  const suggestions = [];
+  const dismissed = JSON.parse(localStorage.getItem('fin2_dismissed_sug')||'[]');
+
+  // A) Patterns from already-categorized transactions
+  // Group by normalized label, find dominant category
+  const patternMap = {};
+  state.transactions.filter(t=>t.category).forEach(tx => {
+    const norm = normLabel(tx.label);
+    if(!norm) return;
+    if(!patternMap[norm]) patternMap[norm] = {label:tx.label, cats:{}, count:0};
+    const k = tx.category+'||'+tx.subcategory;
+    patternMap[norm].cats[k] = (patternMap[norm].cats[k]||0)+1;
+    patternMap[norm].count++;
+  });
+
+  // B) Frequent uncategorized transactions
+  const uncatMap = {};
+  state.transactions.filter(t=>!t.category).forEach(tx => {
+    const norm = normLabel(tx.label);
+    if(!norm) return;
+    if(!uncatMap[norm]) uncatMap[norm] = {label:tx.label, count:0, type:tx.type};
+    uncatMap[norm].count++;
+  });
+
+  // From categorized patterns — suggest rule if no rule exists yet
+  Object.entries(patternMap).forEach(([norm, info]) => {
+    if(dismissed.includes('cat:'+norm)) return;
+    // Check if a rule already covers this
+    const alreadyCovered = state.rules.some(r =>
+      norm.includes(r.pattern.toLowerCase()) || r.pattern.toLowerCase().includes(norm.substring(0,6))
+    );
+    if(alreadyCovered) return;
+    // Find dominant category
+    const sorted = Object.entries(info.cats).sort((a,b)=>b[1]-a[1]);
+    if(!sorted.length) return;
+    const [catKey, catCount] = sorted[0];
+    if(catCount < 1) return;
+    const [cat, subcat] = catKey.split('||');
+    const confidence = Math.round(catCount/info.count*100);
+    suggestions.push({
+      id: 'cat:'+norm,
+      label: info.label,
+      pattern: norm.length > 4 ? norm : info.label.split(' ')[0],
+      matchType: 'contains',
+      category: cat,
+      subcategory: subcat||'',
+      type: '',
+      reason: `${info.count} transaction${info.count>1?'s':''} · catégorie "${cat}" dans ${confidence}% des cas`,
+      confidence,
+    });
+  });
+
+  // From frequent uncategorized
+  Object.entries(uncatMap)
+    .filter(([norm, info]) => info.count >= 2 && !dismissed.includes('uncat:'+norm))
+    .sort((a,b) => b[1].count - a[1].count)
+    .slice(0, 10)
+    .forEach(([norm, info]) => {
+      if(suggestions.some(s=>s.id==='cat:'+norm)) return; // already covered
+      suggestions.push({
+        id: 'uncat:'+norm,
+        label: info.label,
+        pattern: norm.length > 4 ? norm : info.label.split(' ')[0],
+        matchType: 'contains',
+        category: '',
+        subcategory: '',
+        type: info.type,
+        reason: `${info.count} transaction${info.count>1?'s':''} sans catégorie`,
+        confidence: 0,
+      });
+    });
+
+  return suggestions.sort((a,b) => b.confidence - a.confidence).slice(0, 20);
+}
+
+function openSuggestionsModal() {
+  const suggestions = generateSuggestions();
+  const el = document.getElementById('suggestions-list');
+  if(!suggestions.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px 0"><span class="material-symbols-outlined">check_circle</span><h3>Tout est à jour</h3><p>Pas de nouvelle suggestion pour le moment.</p></div>`;
+    document.getElementById('modal-suggestions').classList.add('open');
+    return;
+  }
+  el.innerHTML = suggestions.map(sug => {
+    const catStr = sug.category ? `${sug.category}${sug.subcategory?' · '+sug.subcategory:''}` : 'À catégoriser';
+    const confBadge = sug.confidence > 0
+      ? `<span style="font-size:10px;padding:2px 6px;border-radius:99px;background:${sug.confidence>=80?'#e8f5f0':'#fff8e6'};color:${sug.confidence>=80?'var(--income)':'#b45309'};margin-left:6px">${sug.confidence}% confiance</span>`
+      : '';
+    return `<div class="suggestion-row" id="sug-row-${sug.id.replace(/[^a-z0-9]/gi,'_')}">
+      <h4>"${sug.label}"${confBadge}</h4>
+      <div class="suggestion-meta">${sug.reason} · → ${catStr}</div>
+      <div class="suggestion-actions">
+        <button class="sug-btn sug-btn-accept" onclick="acceptSuggestion(${JSON.stringify(sug).replace(/"/g,'&quot;')})">✓ Créer la règle</button>
+        <button class="sug-btn sug-btn-edit" onclick="editSuggestion(${JSON.stringify(sug).replace(/"/g,'&quot;')})">✏ Modifier</button>
+        <button class="sug-btn sug-btn-dismiss" onclick="dismissSuggestion('${sug.id}','sug_row_${sug.id.replace(/[^a-z0-9]/gi,'_')}')">✕</button>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('modal-suggestions').classList.add('open');
+}
+
+function acceptSuggestion(sug) {
+  const rule = { id:uuid(), pattern:sug.pattern, matchType:sug.matchType, type:sug.type, category:sug.category, subcategory:sug.subcategory, enabled:true };
+  state.rules.push(rule);
+  saveState();
+  dismissSuggestion(sug.id, 'sug_row_'+sug.id.replace(/[^a-z0-9]/gi,'_'));
+  renderRules();
+  toast('Règle créée !');
+}
+
+function editSuggestion(sug) {
+  closeModal('modal-suggestions');
+  setTimeout(() => {
+    // Pre-fill rule modal with suggestion data
+    document.getElementById('rule-id').value = '';
+    document.getElementById('rule-modal-title').textContent = 'Nouvelle règle';
+    document.getElementById('rule-pattern').value = sug.pattern;
+    document.getElementById('rule-match-type').value = sug.matchType;
+    document.getElementById('rule-tx-type').value = sug.type||'';
+    const catSel = document.getElementById('rule-cat');
+    catSel.innerHTML = '<option value="">— Sans catégorie —</option>' +
+      state.categories.map(cat=>`<option value="${cat.name}"${cat.name===sug.category?' selected':''}>${cat.name}</option>`).join('');
+    updateRuleSubcat(sug.subcategory);
+    updateRulePreview();
+    document.getElementById('rule-pattern').oninput = updateRulePreview;
+    document.getElementById('rule-match-type').onchange = updateRulePreview;
+    document.getElementById('rule-tx-type').onchange = updateRulePreview;
+    document.getElementById('modal-rule').classList.add('open');
+  }, 250);
+}
+
+function dismissSuggestion(id, rowId) {
+  const dismissed = JSON.parse(localStorage.getItem('fin2_dismissed_sug')||'[]');
+  if(!dismissed.includes(id)) dismissed.push(id);
+  localStorage.setItem('fin2_dismissed_sug', JSON.stringify(dismissed));
+  const row = document.getElementById(rowId);
+  if(row) row.remove();
+  const el = document.getElementById('suggestions-list');
+  if(el && !el.querySelector('.suggestion-row')) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;font-size:13px;color:var(--muted)">Toutes les suggestions ont été traitées ✓</div>`;
+  }
+}
+
+
+function updateRulesBadge() {
+  const suggestions = generateSuggestions();
+  const navEl = document.getElementById('nav-rules');
+  if(!navEl) return;
+  const existing = navEl.querySelector('.rules-badge');
+  if(existing) existing.remove();
+  if(suggestions.length > 0) {
+    const badge = document.createElement('span');
+    badge.className = 'rules-badge';
+    badge.textContent = suggestions.length > 9 ? '9+' : suggestions.length;
+    badge.style.cssText = 'position:absolute;top:2px;right:calc(50% - 18px);background:var(--primary);color:white;font-size:9px;font-weight:700;border-radius:99px;padding:1px 5px;font-family:"Space Grotesk",sans-serif;';
+    navEl.style.position = 'relative';
+    navEl.appendChild(badge);
+  }
+}
+
+// ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 function init(){
   loadState();
   state.dashMonth=new Date();state.txMonth=new Date();state.analyticsMonth=new Date();
   renderDashboard();
+  setTimeout(updateRulesBadge, 500);
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
 }
 init();
