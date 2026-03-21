@@ -85,7 +85,7 @@ nav {
   padding: 12px 14px;
 }
 .kpi-card .kpi-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 4px; }
-.kpi-card .kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: 17px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.kpi-card .kpi-value { font-family: 'Space Grotesk', sans-serif; font-size: clamp(13px, 3.5vw, 16px); font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .kpi-card .kpi-value.income { color: var(--income); }
 .kpi-card .kpi-value.expense { color: var(--expense); }
 .kpi-card .kpi-delta { font-size: 10px; color: var(--muted); margin-top: 2px; }
@@ -93,8 +93,9 @@ nav {
 /* ── CAT BREAKDOWN (dashboard) ── */
 .cat-breakdown { padding: 0 20px 12px; }
 .cat-breakdown-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 10px; }
-.cat-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
-.cat-bar-label { font-size: 12px; font-weight: 500; width: 90px; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.cat-bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; cursor: pointer; border-radius: 8px; padding: 2px 4px; margin-left: -4px; transition: background 0.15s; }
+.cat-bar-row:active { background: var(--surface); }
+.cat-bar-label { font-size: 12px; font-weight: 500; width: 100px; flex-shrink: 0; line-height: 1.3; word-break: break-word; }
 .cat-bar-track { flex: 1; height: 6px; background: var(--surface2); border-radius: 99px; overflow: hidden; }
 .cat-bar-fill { height: 100%; border-radius: 99px; transition: width 0.5s ease; }
 .cat-bar-val { font-size: 12px; font-weight: 600; font-family: 'Space Grotesk', sans-serif; width: 64px; text-align: right; flex-shrink: 0; white-space: nowrap; }
@@ -168,7 +169,8 @@ nav {
 .legend-dot { width: 9px; height: 9px; border-radius: 3px; flex-shrink: 0; }
 
 .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; padding: 0 20px 16px; }
-.stat-tile { background: var(--surface); border-radius: var(--radius); padding: 14px; }
+.stat-tile { background: var(--surface); border-radius: var(--radius); padding: 14px; cursor: pointer; transition: background 0.15s; }
+.stat-tile:active { background: var(--surface2); }
 .stat-tile .st-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 600; margin-bottom: 5px; }
 .stat-tile .st-value { font-family: 'Space Grotesk', sans-serif; font-size: 18px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .stat-tile .st-value.income { color: var(--income); }
@@ -303,6 +305,17 @@ nav {
 .empty-state p { font-size: 13px; color: var(--muted); }
 
 
+/* ── DRILLDOWN ── */
+.drill-row { display:flex; align-items:center; justify-content:space-between; padding:10px 0; border-bottom:1px solid var(--border); gap:10px; overflow:hidden; }
+.drill-row:last-child { border-bottom:none; }
+.drill-left { flex:1; min-width:0; }
+.drill-name { font-size:13px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.drill-sub { font-size:11px; color:var(--muted); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.drill-right { flex-shrink:0; text-align:right; }
+.drill-amount { font-size:13px; font-weight:700; font-family:'Space Grotesk',sans-serif; }
+.drill-date { font-size:10px; color:var(--muted); }
+.drill-section-title { font-size:11px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.07em; padding:12px 0 6px; }
+
 /* ── INLINE EDIT ── */
 .cat-name-editable {
   display: flex; align-items: center; gap: 8px; flex: 1; cursor: pointer;
@@ -329,9 +342,9 @@ nav {
 
 <!-- ══════════ DASHBOARD ══════════ -->
 <div class="screen active" id="screen-dashboard">
-  <div class="screen-top">
-    <h2 id="dash-title">—</h2>
-    <div class="month-nav">
+  <div style="padding:52px 20px 14px;display:flex;align-items:center;justify-content:space-between">
+    <h2 id="dash-title" style="font-size:22px;font-weight:700">—</h2>
+    <div class="month-nav" style="gap:8px">
       <button class="month-nav-btn" onclick="changeDashMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
       <button class="month-nav-btn" onclick="changeDashMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
     </div>
@@ -339,17 +352,17 @@ nav {
 
   <!-- KPIs -->
   <div class="kpi-row">
-    <div class="kpi-card">
+    <div class="kpi-card" onclick="drillType('income',state.dashMonth)" style="cursor:pointer">
       <div class="kpi-label">Entrées</div>
       <div class="kpi-value income" id="dash-income">€ 0</div>
       <div class="kpi-delta" id="dash-income-delta"></div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" onclick="drillType('expense',state.dashMonth)" style="cursor:pointer">
       <div class="kpi-label">Sorties</div>
       <div class="kpi-value expense" id="dash-expense">€ 0</div>
       <div class="kpi-delta" id="dash-expense-delta"></div>
     </div>
-    <div class="kpi-card">
+    <div class="kpi-card" onclick="drillType('all',state.dashMonth)" style="cursor:pointer">
       <div class="kpi-label">Solde</div>
       <div class="kpi-value" id="dash-net">€ 0</div>
     </div>
@@ -381,12 +394,15 @@ nav {
 
 <!-- ══════════ TRANSACTIONS ══════════ -->
 <div class="screen" id="screen-transactions">
-  <div class="screen-top">
-    <h2>Transactions</h2>
-    <div class="month-nav">
-      <button class="month-nav-btn" onclick="changeTxMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
-      <span class="month-label" id="tx-month-label">—</span>
-      <button class="month-nav-btn" onclick="changeTxMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+  <div style="padding: 52px 20px 0;">
+    <h2 style="font-size:22px;font-weight:700;margin-bottom:12px">Transactions</h2>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="month-nav" style="gap:8px">
+        <button class="month-nav-btn" onclick="changeTxMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
+        <span class="month-label" id="tx-month-label" style="min-width:90px;text-align:center">—</span>
+        <button class="month-nav-btn" onclick="changeTxMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
+      </div>
+      <span id="tx-count-label" style="font-size:11px;color:var(--muted)"></span>
     </div>
   </div>
   <div class="search-bar">
@@ -403,19 +419,19 @@ nav {
 
 <!-- ══════════ ANALYTICS ══════════ -->
 <div class="screen" id="screen-analytics">
-  <div class="screen-top">
-    <h2>Analytics</h2>
-    <div class="month-nav">
+  <div style="padding: 52px 20px 14px; display:flex; align-items:center; justify-content:space-between;">
+    <h2 style="font-size:22px;font-weight:700">Analytics</h2>
+    <div class="month-nav" style="gap:8px">
       <button class="month-nav-btn" onclick="changeAnalyticsMonth(-1)"><span class="material-symbols-outlined">chevron_left</span></button>
-      <span class="month-label" id="analytics-month-label">—</span>
+      <span class="month-label" id="analytics-month-label" style="min-width:80px;font-size:13px;text-align:center">—</span>
       <button class="month-nav-btn" onclick="changeAnalyticsMonth(1)"><span class="material-symbols-outlined">chevron_right</span></button>
     </div>
   </div>
   <div class="stat-grid">
-    <div class="stat-tile"><div class="st-label">Entrées</div><div class="st-value income" id="a-income">€ 0</div></div>
-    <div class="stat-tile"><div class="st-label">Sorties</div><div class="st-value expense" id="a-expense">€ 0</div></div>
-    <div class="stat-tile"><div class="st-label">Solde mois</div><div class="st-value" id="a-net">€ 0</div></div>
-    <div class="stat-tile"><div class="st-label">Transactions</div><div class="st-value" id="a-count">0</div></div>
+    <div class="stat-tile" onclick="drillType('income',state.analyticsMonth)"><div class="st-label">Entrées ›</div><div class="st-value income" id="a-income">€ 0</div></div>
+    <div class="stat-tile" onclick="drillType('expense',state.analyticsMonth)"><div class="st-label">Sorties ›</div><div class="st-value expense" id="a-expense">€ 0</div></div>
+    <div class="stat-tile" onclick="drillType('all',state.analyticsMonth)"><div class="st-label">Solde mois ›</div><div class="st-value" id="a-net">€ 0</div></div>
+    <div class="stat-tile" onclick="drillType('all',state.analyticsMonth)"><div class="st-label">Transactions ›</div><div class="st-value" id="a-count">0</div></div>
   </div>
   <div class="segmented">
     <button class="seg-btn active" onclick="setAnalyticsTab('pie',this)">Catégories</button>
@@ -604,6 +620,22 @@ nav {
   </div>
 </div>
 
+
+<!-- Drilldown modal -->
+<div class="modal-overlay" id="modal-drilldown" onclick="closeModal('modal-drilldown')">
+  <div class="modal" onclick="event.stopPropagation()">
+    <div class="modal-handle"></div>
+    <div id="drilldown-header" style="margin-bottom:16px">
+      <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:600;margin-bottom:4px" id="drilldown-subtitle"></div>
+      <div style="display:flex;align-items:baseline;justify-content:space-between">
+        <div style="font-size:20px;font-weight:700;font-family:'Space Grotesk',sans-serif" id="drilldown-title"></div>
+        <div style="font-size:20px;font-weight:700;font-family:'Space Grotesk',sans-serif" id="drilldown-total"></div>
+      </div>
+    </div>
+    <div id="drilldown-list" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 </div>
 
@@ -741,7 +773,7 @@ function renderCatBars(txs) {
   el.innerHTML = sorted.map(([cat,val]) => {
     const pct = (val/max*100).toFixed(1);
     const color = getCatColor(cat);
-    return `<div class="cat-bar-row">
+    return `<div class="cat-bar-row" onclick="drillCategory('${cat.replace(/'/g,"\'")}','expense',state.dashMonth)">
       <span class="cat-bar-label">${cat}</span>
       <div class="cat-bar-track"><div class="cat-bar-fill" style="width:${pct}%;background:${color}"></div></div>
       <span class="cat-bar-val" style="color:${color}">${fmt(val)}</span>
@@ -790,11 +822,13 @@ function setTxFilter(f, el) {
 
 function renderTransactions() {
   const m = state.txMonth;
-  document.getElementById('tx-month-label').textContent = m.toLocaleDateString('fr-FR',{month:'short',year:'2-digit'});
+  document.getElementById('tx-month-label').textContent = m.toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
   const search = (document.getElementById('tx-search')?.value||'').toLowerCase();
   let txs = getMonthTxs(m).sort((a,b)=>new Date(b.date)-new Date(a.date));
   if(state.txFilter!=='all') txs=txs.filter(t=>t.type===state.txFilter);
   if(search) txs=txs.filter(t=>t.label.toLowerCase().includes(search)||(t.category||'').toLowerCase().includes(search)||(t.subcategory||'').toLowerCase().includes(search));
+  const countEl = document.getElementById('tx-count-label');
+  if(countEl) countEl.textContent = txs.length ? txs.length+' opération'+(txs.length>1?'s':'') : '';
   const el = document.getElementById('tx-list-full');
   el.innerHTML = txs.length ? txs.map(tx=>txRowHTML(tx)).join('') :
     `<div class="empty-state"><span class="material-symbols-outlined">receipt_long</span><h3>Aucune transaction</h3><p>Essayez un autre mois ou filtre.</p></div>`;
@@ -929,7 +963,7 @@ function renderPieChart() {
     data:{labels,datasets:[{data,backgroundColor:colors,borderWidth:0,hoverOffset:6}]},
     options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>` ${c.label}: ${fmt(c.raw)}`}}},cutout:'62%',responsive:true}
   });
-  document.getElementById('pie-legend').innerHTML=labels.map((l,i)=>`<div class="legend-item"><div class="legend-dot" style="background:${colors[i]}"></div>${l}</div>`).join('');
+  document.getElementById('pie-legend').innerHTML=labels.map((l,i)=>`<div class="legend-item" style="cursor:pointer" onclick="drillCategory('${l.replace(/'/g,"\\'")}','expense',state.analyticsMonth)"><div class="legend-dot" style="background:${colors[i]}"></div>${l} ›</div>`).join('');
 }
 
 function renderLineChart() {
@@ -962,15 +996,17 @@ function renderCompare() {
   const prevLabel=prev.toLocaleDateString('fr-FR',{month:'short'});
   document.getElementById('compare-title').textContent=`${curLabel} vs ${prevLabel}`;
   const metrics=[
-    {label:'Entrées',cur:curTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),prev:prevTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),color:'var(--income)'},
-    {label:'Sorties',cur:curTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),prev:prevTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),color:'var(--expense)'},
+    {label:'Entrées',type:'income',cur:curTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),prev:prevTxs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0),color:'var(--income)'},
+    {label:'Sorties',type:'expense',cur:curTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),prev:prevTxs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0),color:'var(--expense)'},
   ];
   document.getElementById('compare-content').innerHTML=metrics.map(m=>{
     const maxVal=Math.max(m.cur,m.prev,1);
+    const curMonth=state.analyticsMonth;
+    const prevMonth=new Date(curMonth.getFullYear(),curMonth.getMonth()-1,1);
     return `<div style="margin-bottom:18px">
       <div style="font-size:12px;font-weight:600;margin-bottom:8px">${m.label}</div>
-      <div class="compare-row"><label>${curLabel}</label><div class="compare-bar-wrap"><div class="compare-bar" style="width:${(m.cur/maxVal*100).toFixed(1)}%;background:${m.color}"></div></div><span class="compare-val" style="color:${m.color}">${fmt(m.cur)}</span></div>
-      <div class="compare-row"><label>${prevLabel}</label><div class="compare-bar-wrap"><div class="compare-bar" style="width:${(m.prev/maxVal*100).toFixed(1)}%;background:${m.color};opacity:.4"></div></div><span class="compare-val" style="color:var(--muted)">${fmt(m.prev)}</span></div>
+      <div class="compare-row" style="cursor:pointer" onclick="drillType('${m.type}',state.analyticsMonth)"><label>${curLabel}</label><div class="compare-bar-wrap"><div class="compare-bar" style="width:${(m.cur/maxVal*100).toFixed(1)}%;background:${m.color}"></div></div><span class="compare-val" style="color:${m.color}">${fmt(m.cur)} ›</span></div>
+      <div class="compare-row" style="cursor:pointer" onclick="drillType('${m.type}',new Date(state.analyticsMonth.getFullYear(),state.analyticsMonth.getMonth()-1,1))"><label>${prevLabel}</label><div class="compare-bar-wrap"><div class="compare-bar" style="width:${(m.prev/maxVal*100).toFixed(1)}%;background:${m.color};opacity:.4"></div></div><span class="compare-val" style="color:var(--muted)">${fmt(m.prev)} ›</span></div>
     </div>`;
   }).join('');
 }
@@ -980,7 +1016,7 @@ function renderTopList() {
   const sorted=[...txs].sort((a,b)=>b.amount-a.amount).slice(0,10);
   const el=document.getElementById('top-list');
   if(!sorted.length){el.innerHTML=`<div class="empty-state" style="padding:24px 0"><span class="material-symbols-outlined">receipt_long</span><p>Aucune dépense ce mois.</p></div>`;return;}
-  el.innerHTML=sorted.map((tx,i)=>`<div class="top-item">
+  el.innerHTML=sorted.map((tx,i)=>`<div class="top-item" style="cursor:pointer" onclick="openTxDetail('${tx.id}')">
     <span class="top-rank">#${i+1}</span>
     <div class="top-info"><div class="top-name">${tx.label}</div><div class="top-cat">${[tx.category,tx.subcategory].filter(Boolean).join(' · ')||'—'}</div></div>
     <span class="top-amount">-\u202f${fmt(tx.amount)}</span>
@@ -1358,6 +1394,78 @@ function submitAddTransaction(){
   saveState();closeModal('modal-add');toast('Transaction ajoutée !');
   if(state.currentScreen==='dashboard')renderDashboard();
   if(state.currentScreen==='transactions')renderTransactions();
+}
+
+// ═══════════════════════════════════════════════════════════
+// DRILLDOWN
+// ═══════════════════════════════════════════════════════════
+function openDrilldown(title, subtitle, txs) {
+  document.getElementById('drilldown-title').textContent = title;
+  document.getElementById('drilldown-subtitle').textContent = subtitle;
+  const inc = txs.filter(t=>t.type==='income').reduce((s,t)=>s+t.amount,0);
+  const exp = txs.filter(t=>t.type==='expense').reduce((s,t)=>s+t.amount,0);
+  const net = inc - exp;
+  const totalEl = document.getElementById('drilldown-total');
+  if(txs.every(t=>t.type==='income')) { totalEl.textContent = fmt(inc); totalEl.style.color='var(--income)'; }
+  else if(txs.every(t=>t.type==='expense')) { totalEl.textContent = '- '+fmt(exp); totalEl.style.color='var(--expense)'; }
+  else { totalEl.textContent = (net>=0?'+ ':'- ')+fmt(Math.abs(net)); totalEl.style.color=net>=0?'var(--income)':'var(--expense)'; }
+
+  const sorted = [...txs].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const el = document.getElementById('drilldown-list');
+  if(!sorted.length){el.innerHTML=`<div class="empty-state" style="padding:20px 0"><span class="material-symbols-outlined">receipt_long</span><p>Aucune transaction</p></div>`;document.getElementById('modal-drilldown').classList.add('open');return;}
+
+  // Group by date
+  const byDate = {};
+  sorted.forEach(tx=>{
+    const d = tx.date||'';
+    if(!byDate[d]) byDate[d]=[];
+    byDate[d].push(tx);
+  });
+
+  let html = '';
+  Object.entries(byDate).forEach(([date, dTxs])=>{
+    const dateStr = date ? new Date(date).toLocaleDateString('fr-FR',{weekday:'short',day:'numeric',month:'short'}) : '—';
+    html += `<div class="drill-section-title">${dateStr}</div>`;
+    dTxs.forEach(tx=>{
+      const isIncome=tx.type==='income';
+      const color=getCatColor(tx.category);
+      const amtStr=(isIncome?'+ ':'- ')+fmt(tx.amount);
+      const amtColor=isIncome?'var(--income)':'var(--expense)';
+      const sub=[tx.category,tx.subcategory].filter(Boolean).join(' · ')||'';
+      html+=`<div class="drill-row" onclick="closeModal('modal-drilldown');setTimeout(()=>openTxDetail('${tx.id}'),200)">
+        <div class="drill-left">
+          <div class="drill-name">${tx.label}</div>
+          ${sub?`<div class="drill-sub">${sub}</div>`:''}
+        </div>
+        <div class="drill-right">
+          <div class="drill-amount" style="color:${amtColor}">${amtStr}</div>
+        </div>
+      </div>`;
+    });
+  });
+  el.innerHTML = html;
+  document.getElementById('modal-drilldown').classList.add('open');
+}
+
+function drillType(type, month) {
+  let txs = getMonthTxs(month);
+  if(type!=='all') txs=txs.filter(t=>t.type===type);
+  const monthStr = new Date(month).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  const title = type==='income'?'Entrées':type==='expense'?'Sorties':'Toutes les transactions';
+  openDrilldown(title, monthStr, txs);
+}
+
+function drillCategory(catName, type, month) {
+  let txs = getMonthTxs(month).filter(t=>t.category===catName);
+  if(type) txs=txs.filter(t=>t.type===type);
+  const monthStr = new Date(month).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  openDrilldown(catName, monthStr, txs);
+}
+
+function drillTopItem(catName, subcatName, month) {
+  let txs = getMonthTxs(month).filter(t=>t.category===catName&&(subcatName?t.subcategory===subcatName:true));
+  const monthStr = new Date(month).toLocaleDateString('fr-FR',{month:'long',year:'numeric'});
+  openDrilldown(catName+(subcatName?' · '+subcatName:''), monthStr, txs);
 }
 
 // ═══════════════════════════════════════════════════════════
