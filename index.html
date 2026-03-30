@@ -486,6 +486,49 @@ nav {
   /* KPI values fixed size on large screen */
   .kpi-card .kpi-value { font-size: 18px; }
 }
+
+/* ── SPINNER ── */
+@keyframes spin { to { transform: rotate(360deg); } }
+.spin { animation: spin 0.75s linear infinite; display: inline-block; }
+
+/* ── ONBOARDING ── */
+.onboard-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.55);
+  z-index: 1100; display: flex; align-items: center; justify-content: center;
+}
+.onboard-overlay.hidden { display: none; }
+.onboard-card {
+  background: var(--bg); border-radius: 24px; padding: 36px 28px 28px;
+  max-width: 360px; width: calc(100% - 40px);
+  display: flex; flex-direction: column; align-items: center;
+  animation: slideUp 0.28s ease;
+}
+.onboard-icon { font-size: 52px; margin-bottom: 18px; }
+.onboard-title { font-size: 21px; font-weight: 700; font-family: 'Space Grotesk', sans-serif; text-align: center; margin-bottom: 10px; }
+.onboard-desc { font-size: 13px; color: var(--muted); text-align: center; line-height: 1.65; margin-bottom: 24px; }
+.onboard-dots { display: flex; gap: 6px; margin-bottom: 24px; }
+.onboard-dot { width: 8px; height: 8px; border-radius: 99px; background: var(--border); transition: all 0.25s; }
+.onboard-dot.active { background: var(--primary); width: 22px; }
+.onboard-actions { display: flex; gap: 10px; width: 100%; }
+.onboard-skip { flex: 1; height: 44px; border-radius: 99px; border: 1px solid var(--border); background: var(--surface); color: var(--muted); font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; }
+.onboard-next { flex: 2; height: 44px; border-radius: 99px; border: none; background: var(--text); color: white; font-size: 13px; font-weight: 600; cursor: pointer; font-family: 'Space Grotesk', sans-serif; transition: opacity 0.15s; }
+.onboard-next:active { opacity: 0.8; }
+
+/* ── UNDO HISTORY ── */
+.history-row { display: flex; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--border); cursor: pointer; }
+.history-row:last-child { border-bottom: none; }
+.history-row:hover { opacity: 0.75; }
+.history-icon { width: 32px; height: 32px; border-radius: 8px; background: var(--surface); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.history-body { flex: 1; min-width: 0; }
+.history-label { font-size: 13px; font-weight: 500; }
+.history-time { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+/* ── SHEETS WIZARD ── */
+.wizard-step { display: none; }
+.wizard-step.active { display: block; }
+.wizard-progress { display: flex; gap: 4px; margin-bottom: 20px; }
+.wizard-bar { flex: 1; height: 3px; border-radius: 99px; background: var(--border); transition: background 0.3s; }
+.wizard-bar.done { background: var(--primary); }
 </style>
 </head>
 <body>
@@ -659,6 +702,10 @@ nav {
       <span class="material-symbols-outlined">download</span> Exporter XLSX (DB à jour)
     </button>
     <div style="height:8px"></div>
+    <button class="export-btn" onclick="openSheetsWizard()" style="color:#188038;border-color:#a8d5b5;background:#f0faf3">
+      <span class="material-symbols-outlined">table_chart</span> Importer depuis Google Sheets
+    </button>
+    <div style="height:8px"></div>
     <button class="export-btn" id="wipe-btn-1" onclick="wipeStep1()" style="color:var(--expense);border-color:#fca5a5;background:#fff8f8">
       <span class="material-symbols-outlined">delete_forever</span> Vider la base de données
     </button>
@@ -675,6 +722,9 @@ nav {
       </div>
     </div>
     <div style="height:12px"></div>
+    <div style="text-align:center;padding:0 20px 4px">
+      <span onclick="showUndoHistory()" style="font-size:11px;color:var(--border);cursor:pointer;user-select:none" title="Historique des actions">···</span>
+    </div>
   </div>
   <div id="drop-zone" class="import-zone" onclick="document.getElementById('file-input').click()" ondragover="handleDragOver(event)" ondragleave="handleDragLeave(event)" ondrop="handleDrop(event)">
     <span class="material-symbols-outlined">upload_file</span>
@@ -963,6 +1013,99 @@ nav {
   </div>
 </div>
 
+<!-- ══════════ ONBOARDING ══════════ -->
+<div class="onboard-overlay hidden" id="onboard-overlay">
+  <div class="onboard-card">
+    <div class="onboard-icon" id="ob-icon">💸</div>
+    <div class="onboard-title" id="ob-title">Bienvenue sur FinApp</div>
+    <div class="onboard-desc" id="ob-desc">Ton tableau de bord financier personnel. Importe tes transactions, catégorise-les et visualise tes habitudes de dépenses.</div>
+    <div class="onboard-dots" id="ob-dots">
+      <div class="onboard-dot active"></div>
+      <div class="onboard-dot"></div>
+      <div class="onboard-dot"></div>
+      <div class="onboard-dot"></div>
+    </div>
+    <div class="onboard-actions">
+      <button class="onboard-skip" onclick="finishOnboarding()">Passer</button>
+      <button class="onboard-next" id="ob-next-btn" onclick="obNext()">Suivant →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ UNDO HISTORY ══════════ -->
+<div class="modal-overlay" id="modal-undo-history">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <h3 style="margin:0">Historique des actions</h3>
+      <button onclick="closeModal('modal-undo-history')" style="background:none;border:none;cursor:pointer;color:var(--muted)"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div id="undo-history-list"></div>
+  </div>
+</div>
+
+<!-- ══════════ SHEETS WIZARD ══════════ -->
+<div class="modal-overlay" id="modal-sheets-wizard">
+  <div class="modal" style="max-height:88dvh">
+    <div class="modal-handle"></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+      <h3 style="margin:0;font-size:16px">Importer depuis Google Sheets</h3>
+      <button onclick="closeModal('modal-sheets-wizard')" style="background:none;border:none;cursor:pointer;color:var(--muted)"><span class="material-symbols-outlined">close</span></button>
+    </div>
+    <div class="wizard-progress" id="wizard-progress">
+      <div class="wizard-bar done" id="wb-0"></div>
+      <div class="wizard-bar" id="wb-1"></div>
+      <div class="wizard-bar" id="wb-2"></div>
+    </div>
+
+    <!-- Étape 1 : URL -->
+    <div class="wizard-step active" id="ws-0">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Colle l'URL de ta Google Sheet contenant tes contreparties pré-catégorisées. La feuille doit être accessible (partage public en lecture, ou privée si tu es connecté à Drive).</p>
+      <div class="form-group">
+        <label>URL Google Sheets</label>
+        <input class="form-input" id="sheets-url" type="url" placeholder="https://docs.google.com/spreadsheets/d/…"/>
+      </div>
+      <div id="sheets-url-error" style="font-size:12px;color:var(--expense);display:none;margin-bottom:10px"></div>
+      <button class="btn-primary" style="margin:0" onclick="sheetsWizardFetch()">
+        <span id="sheets-fetch-icon" class="material-symbols-outlined" style="font-size:18px">download</span> Charger la feuille
+      </button>
+    </div>
+
+    <!-- Étape 2 : mapping colonnes -->
+    <div class="wizard-step" id="ws-1">
+      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Associe les colonnes de ta feuille aux champs nécessaires.</p>
+      <div class="form-group">
+        <label>Colonne — Contrepartie / Libellé</label>
+        <select class="form-input" id="sheets-col-label"></select>
+      </div>
+      <div class="form-group">
+        <label>Colonne — Catégorie</label>
+        <select class="form-input" id="sheets-col-cat"></select>
+      </div>
+      <div class="form-group">
+        <label>Colonne — Sous-catégorie <span style="color:var(--muted);font-weight:400">(optionnel)</span></label>
+        <select class="form-input" id="sheets-col-subcat"><option value="">— Aucune —</option></select>
+      </div>
+      <div style="display:flex;gap:10px;margin-top:4px">
+        <button class="btn-secondary" style="flex:1;margin:0" onclick="sheetsWizardStep(0)">← Retour</button>
+        <button class="btn-primary" style="flex:2;margin:0" onclick="sheetsWizardPreview()">Prévisualiser →</button>
+      </div>
+    </div>
+
+    <!-- Étape 3 : preview + import -->
+    <div class="wizard-step" id="ws-2">
+      <div id="sheets-preview-info" style="font-size:13px;color:var(--muted);margin-bottom:12px"></div>
+      <div id="sheets-preview-list" style="max-height:300px;overflow-y:auto;margin-bottom:14px"></div>
+      <div style="display:flex;gap:10px">
+        <button class="btn-secondary" style="flex:1;margin:0" onclick="sheetsWizardStep(1)">← Retour</button>
+        <button class="btn-primary" style="flex:2;margin:0" onclick="sheetsWizardImport()">
+          <span class="material-symbols-outlined" style="font-size:18px">auto_fix_high</span> Créer les règles
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <div class="snackbar" id="snackbar">
   <span class="snackbar-msg" id="snackbar-msg"></span>
   <button class="snackbar-undo" id="snackbar-undo" onclick="undoAction()" style="display:none">Annuler</button>
@@ -1028,23 +1171,29 @@ function monthKey(d) { const dt = new Date(d); return dt.getFullYear()+'-'+Strin
 function getCat(name) { return state.categories.find(c=>c.name===name); }
 function getCatColor(name) { const c=getCat(name); return c?c.color:'#CCCCCC'; }
 function uuid() { return '_'+Math.random().toString(36).substr(2,9); }
-// ── SNACKBAR + UNDO ──
+// ── SNACKBAR + UNDO STACK ──
 let _snackTimer = null;
-let _undoSnapshot = null;
+const _undoStack = []; // [{label, time, snapshot}]
+const UNDO_MAX = 10;
 
-function captureUndo() {
-  _undoSnapshot = {
-    transactions: JSON.parse(JSON.stringify(state.transactions)),
-    categories: JSON.parse(JSON.stringify(state.categories)),
-    rules: JSON.parse(JSON.stringify(state.rules))
-  };
+function captureUndo(label = 'Modification') {
+  _undoStack.push({
+    label,
+    time: new Date(),
+    snapshot: {
+      transactions: JSON.parse(JSON.stringify(state.transactions)),
+      categories: JSON.parse(JSON.stringify(state.categories)),
+      rules: JSON.parse(JSON.stringify(state.rules))
+    }
+  });
+  if (_undoStack.length > UNDO_MAX) _undoStack.shift();
 }
 
 function toast(msg, undoable = false) {
   const sb = document.getElementById('snackbar');
   document.getElementById('snackbar-msg').textContent = msg;
   const undoBtn = document.getElementById('snackbar-undo');
-  undoBtn.style.display = (undoable && _undoSnapshot) ? 'inline-flex' : 'none';
+  undoBtn.style.display = (undoable && _undoStack.length) ? 'inline-flex' : 'none';
   sb.classList.add('show');
   clearTimeout(_snackTimer);
   _snackTimer = setTimeout(closeSnackbar, 5000);
@@ -1056,12 +1205,11 @@ function closeSnackbar() {
 }
 
 function undoAction() {
-  if (!_undoSnapshot) return;
-  const snap = _undoSnapshot;
-  _undoSnapshot = null;
-  state.transactions = snap.transactions;
-  state.categories = snap.categories;
-  state.rules = snap.rules;
+  const entry = _undoStack.pop();
+  if (!entry) return;
+  state.transactions = entry.snapshot.transactions;
+  state.categories = entry.snapshot.categories;
+  state.rules = entry.snapshot.rules;
   try {
     localStorage.setItem('fin2_tx', JSON.stringify(state.transactions));
     localStorage.setItem('fin2_cats', JSON.stringify(state.categories));
@@ -1070,7 +1218,53 @@ function undoAction() {
   if (typeof driveToken !== 'undefined' && driveToken) drivePush(false);
   closeSnackbar();
   nav(state.currentScreen || 'dashboard');
-  toast('Action annulée ✓');
+  toast('«\u202f' + entry.label + '\u202f» annulé');
+}
+
+function showUndoHistory() {
+  const el = document.getElementById('undo-history-list');
+  if (!_undoStack.length) {
+    el.innerHTML = `<div class="empty-state" style="padding:20px 0"><span class="material-symbols-outlined">history</span><p>Aucune action récente</p></div>`;
+  } else {
+    const items = [..._undoStack].reverse();
+    el.innerHTML = items.map((e, i) => {
+      const ago = _timeAgo(e.time);
+      return `<div class="history-row" onclick="undoToIndex(${_undoStack.length - 1 - i})">
+        <div class="history-icon"><span class="material-symbols-outlined" style="font-size:16px;color:var(--muted)">undo</span></div>
+        <div class="history-body">
+          <div class="history-label">${e.label}</div>
+          <div class="history-time">${ago}</div>
+        </div>
+        <span class="material-symbols-outlined" style="font-size:16px;color:var(--muted)">chevron_right</span>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('modal-undo-history').classList.add('open');
+}
+
+function undoToIndex(idx) {
+  if (idx < 0 || idx >= _undoStack.length) return;
+  const entry = _undoStack[idx];
+  _undoStack.splice(idx);
+  state.transactions = entry.snapshot.transactions;
+  state.categories = entry.snapshot.categories;
+  state.rules = entry.snapshot.rules;
+  try {
+    localStorage.setItem('fin2_tx', JSON.stringify(state.transactions));
+    localStorage.setItem('fin2_cats', JSON.stringify(state.categories));
+    localStorage.setItem('fin2_rules', JSON.stringify(state.rules));
+  } catch(e) {}
+  if (typeof driveToken !== 'undefined' && driveToken) drivePush(false);
+  closeModal('modal-undo-history');
+  nav(state.currentScreen || 'dashboard');
+  toast('Restauré : «\u202f' + entry.label + '\u202f»');
+}
+
+function _timeAgo(date) {
+  const s = Math.floor((Date.now() - date) / 1000);
+  if (s < 60) return 'À l\'instant';
+  if (s < 3600) return Math.floor(s/60) + ' min';
+  return Math.floor(s/3600) + ' h';
 }
 function closeModal(id) { document.getElementById(id).classList.remove('open'); }
 function getMonthTxs(month) { return state.transactions.filter(tx=>monthKey(tx.date)===monthKey(month)); }
@@ -1300,7 +1494,7 @@ function updateDetailSubcat(txId) {
 function saveTxCategory(id) {
   const tx = state.transactions.find(t=>t.id===id);
   if(!tx) return;
-  captureUndo();
+  captureUndo('Catégorie modifiée');
   const newCat = document.getElementById('detail-cat').value;
   const newSubcat = document.getElementById('detail-subcat').value;
   tx.category = newCat;
@@ -1321,7 +1515,7 @@ function saveTxCategory(id) {
 }
 
 function deleteTx(id) {
-  captureUndo();
+  captureUndo('Transaction supprimée');
   state.transactions = state.transactions.filter(t=>t.id!==id);
   saveState();
   closeModal('modal-detail');
@@ -1801,9 +1995,9 @@ function deleteCategory(id){
   if(cat){
     const txCount=state.transactions.filter(t=>t.category===cat.name).length;
     if(txCount>0 && !confirm(`Supprimer "${cat.name}" ? Les ${txCount} transaction(s) associées perdront leur catégorie.`)) return;
-    captureUndo();
+    captureUndo('Catégorie supprimée');
     state.transactions.forEach(t=>{if(t.category===cat.name){t.category='';t.subcategory='';}});
-  } else { captureUndo(); }
+  } else { captureUndo('Catégorie supprimée'); }
   state.categories=state.categories.filter(c=>c.id!==id);
   saveState();renderCategories();
   toast('Catégorie supprimée', true);
@@ -1811,7 +2005,7 @@ function deleteCategory(id){
 function deleteSubcat(catId,sub){
   const cat=state.categories.find(c=>c.id===catId);
   if(cat){
-    captureUndo();
+    captureUndo('Sous-catégorie supprimée');
     cat.subcategories=cat.subcategories.filter(s=>s!==sub);
     state.transactions.forEach(t=>{if(t.category===cat.name&&t.subcategory===sub)t.subcategory='';});
     saveState();renderCategories();
@@ -1822,7 +2016,7 @@ function addSubcat(catId){
   const name=prompt('Nom de la sous-catégorie :');
   if(!name||!name.trim())return;
   const cat=state.categories.find(c=>c.id===catId);
-  if(cat&&!cat.subcategories.includes(name.trim())){captureUndo();cat.subcategories.push(name.trim());saveState();renderCategories();toast('Sous-catégorie ajoutée', true);}
+  if(cat&&!cat.subcategories.includes(name.trim())){captureUndo('Sous-catégorie ajoutée');cat.subcategories.push(name.trim());saveState();renderCategories();toast('Sous-catégorie ajoutée', true);}
 }
 
 // ── EDIT CATEGORY ──
@@ -1863,7 +2057,7 @@ function submitEditCategory(){
   const colorEl=document.querySelector('#edit-color-picker .color-swatch.selected');
   const cat=state.categories.find(c=>c.id===id);
   if(!cat)return;
-  captureUndo();
+  captureUndo('Catégorie renommée');
   cat.name=newName;
   cat.color=isValidHex(hexVal)?hexVal:(colorEl?colorEl.dataset.color:cat.color);
   // Propagate rename to all transactions
@@ -1897,7 +2091,7 @@ function submitEditSubcat(){
   if(!newName){toast('Entrez un nom');return;}
   const cat=state.categories.find(c=>c.id===catId);
   if(!cat)return;
-  captureUndo();
+  captureUndo('Sous-catégorie renommée');
   const idx=cat.subcategories.indexOf(oldName);
   if(idx>=0)cat.subcategories[idx]=newName;
   let updated=0;
@@ -1928,7 +2122,7 @@ function submitNewCategory(){
   if(!name){toast('Entrez un nom');return;}
   const hexVal=document.getElementById('color-hex-input').value.trim();
   const color=isValidHex(hexVal)?hexVal:(document.querySelector('#color-picker .color-swatch.selected')?.dataset.color||CAT_COLORS[0]);
-  captureUndo();
+  captureUndo('Catégorie créée');
   state.categories.push({id:uuid(),name,color,subcategories:[]});
   saveState();closeModal('modal-cat');renderCategories();toast('Catégorie créée !', true);
 }
@@ -1956,7 +2150,7 @@ function submitAddTransaction(){
   const category=document.getElementById('add-cat').value;
   const subcategory=document.getElementById('add-subcat').value;
   if(!label||isNaN(amount)||amount<=0){toast('Remplissez tous les champs');return;}
-  captureUndo();
+  captureUndo('Transaction ajoutée');
   state.transactions.push({id:uuid(),label,amount,date,type,category,subcategory});
   saveState();closeModal('modal-add');toast('Transaction ajoutée !', true);
   if(state.currentScreen==='dashboard')renderDashboard();
@@ -2100,7 +2294,7 @@ function countRuleMatches(rule) {
 }
 
 function applyRulesRetroactively() {
-  captureUndo();
+  captureUndo('Règles appliquées');
   let updated = 0;
   state.transactions.forEach(tx => { if(applyRulesToTx(tx)) updated++; });
   saveState();
@@ -2149,7 +2343,7 @@ function toggleRule(id) {
 }
 
 function deleteRule(id) {
-  captureUndo();
+  captureUndo('Règle supprimée');
   state.rules = state.rules.filter(r=>r.id!==id);
   saveState(); renderRules();
   toast('Règle supprimée', true);
@@ -2206,6 +2400,7 @@ function saveRule() {
   const id = document.getElementById('rule-id').value;
   const pattern = document.getElementById('rule-pattern').value.trim();
   if(!pattern) { toast('Entrez un pattern'); return; }
+  captureUndo(id ? 'Règle modifiée' : 'Règle créée');
   const rule = {
     id: id || uuid(),
     pattern,
@@ -2500,8 +2695,20 @@ async function driveFindFile() {
   } catch(e) {}
 }
 
+function _driveSpinner(on) {
+  const dot = document.getElementById('drive-status-dot');
+  const syncEl = document.getElementById('drive-last-sync');
+  if (on) {
+    if (dot) { dot.style.background = '#4285F4'; dot.classList.add('spin'); }
+    if (syncEl) syncEl.textContent = 'Sauvegarde en cours…';
+  } else {
+    if (dot) { dot.style.background = '#0A7A5A'; dot.classList.remove('spin'); }
+  }
+}
+
 async function drivePush(showToast = false) {
   if (!driveToken) return;
+  _driveSpinner(true);
   const body = JSON.stringify({
     transactions: state.transactions,
     categories: state.categories,
@@ -2530,11 +2737,13 @@ async function drivePush(showToast = false) {
         body
       });
     }
+    _driveSpinner(false);
     const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
     const el = document.getElementById('drive-last-sync');
     if (el) el.textContent = `Dernière sauvegarde : ${now}`;
     if (showToast) toast('Sauvegardé sur Drive ✓');
   } catch(e) {
+    _driveSpinner(false);
     if (showToast) toast('Erreur Drive : ' + e.message);
   }
 }
@@ -2563,6 +2772,163 @@ async function drivePull(showToast = false) {
 }
 
 // ═══════════════════════════════════════════════════════════
+// ONBOARDING
+// ═══════════════════════════════════════════════════════════
+const OB_STEPS = [
+  { icon:'💸', title:'Bienvenue sur FinApp', desc:'Ton tableau de bord financier personnel. Importe tes transactions, catégorise-les et visualise tes habitudes de dépenses.' },
+  { icon:'📂', title:'Importe tes transactions', desc:'Glisse un fichier .xlsx ou .csv de ta banque dans l\'onglet Import. FinApp détecte automatiquement les colonnes et nettoie les montants.' },
+  { icon:'🏷️', title:'Catégorise intelligemment', desc:'Crée des règles pour catégoriser automatiquement tes transactions récurrentes. Importe aussi ta liste de contreparties depuis Google Sheets.' },
+  { icon:'☁️', title:'Synchronisation Drive', desc:'Connecte ton Google Drive pour sauvegarder automatiquement toutes tes données : transactions, catégories et règles. Accessible partout.' },
+];
+let _obStep = 0;
+
+function showOnboarding() {
+  _obStep = 0;
+  _renderObStep();
+  document.getElementById('onboard-overlay').classList.remove('hidden');
+}
+function _renderObStep() {
+  const s = OB_STEPS[_obStep];
+  document.getElementById('ob-icon').textContent = s.icon;
+  document.getElementById('ob-title').textContent = s.title;
+  document.getElementById('ob-desc').textContent = s.desc;
+  document.getElementById('ob-next-btn').textContent = _obStep === OB_STEPS.length - 1 ? 'Commencer ✓' : 'Suivant →';
+  const dots = document.querySelectorAll('.onboard-dot');
+  dots.forEach((d, i) => d.classList.toggle('active', i === _obStep));
+}
+function obNext() {
+  if (_obStep < OB_STEPS.length - 1) { _obStep++; _renderObStep(); }
+  else finishOnboarding();
+}
+function finishOnboarding() {
+  localStorage.setItem('fin2_onboarded', '1');
+  document.getElementById('onboard-overlay').classList.add('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════
+// GOOGLE SHEETS WIZARD
+// ═══════════════════════════════════════════════════════════
+let _sheetsData = [];
+let _sheetsHeaders = [];
+
+function openSheetsWizard() {
+  _sheetsData = []; _sheetsHeaders = [];
+  sheetsWizardStep(0);
+  document.getElementById('sheets-url').value = '';
+  document.getElementById('sheets-url-error').style.display = 'none';
+  document.getElementById('modal-sheets-wizard').classList.add('open');
+}
+
+function sheetsWizardStep(n) {
+  [0,1,2].forEach(i => {
+    document.getElementById('ws-'+i).classList.toggle('active', i === n);
+    document.getElementById('wb-'+i).classList.toggle('done', i <= n);
+  });
+}
+
+async function sheetsWizardFetch() {
+  const url = document.getElementById('sheets-url').value.trim();
+  const errEl = document.getElementById('sheets-url-error');
+  errEl.style.display = 'none';
+  const icon = document.getElementById('sheets-fetch-icon');
+  // Extract sheet ID
+  const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
+  if (!m) { errEl.textContent = 'URL invalide. Copie l\'URL complète depuis ton navigateur.'; errEl.style.display = 'block'; return; }
+  const sheetId = m[1];
+  const gidM = url.match(/[#&?]gid=(\d+)/);
+  const gid = gidM ? gidM[1] : '0';
+  const csvUrl = `https://docs.google.com/spreadsheets/d/${sheetId}/export?format=csv&gid=${gid}`;
+  icon.classList.add('spin');
+  try {
+    const resp = await fetch(csvUrl);
+    if (!resp.ok) throw new Error('Accès refusé ou feuille introuvable');
+    const text = await resp.text();
+    const rows = text.trim().split('\n').map(r => r.split(',').map(c => c.replace(/^"|"$/g,'').trim()));
+    if (rows.length < 2) throw new Error('La feuille semble vide');
+    _sheetsHeaders = rows[0];
+    _sheetsData = rows.slice(1).filter(r => r.some(c => c));
+    // Populate column selects
+    const opts = _sheetsHeaders.map((h,i) => `<option value="${i}">${h || 'Colonne '+(i+1)}</option>`).join('');
+    ['sheets-col-label','sheets-col-cat'].forEach(id => document.getElementById(id).innerHTML = opts);
+    document.getElementById('sheets-col-subcat').innerHTML = '<option value="">— Aucune —</option>' + opts;
+    // Auto-detect columns
+    _sheetsHeaders.forEach((h,i) => {
+      const hl = h.toLowerCase();
+      if (/libel|label|tiers|nom|contre|payee/i.test(hl)) document.getElementById('sheets-col-label').value = i;
+      if (/cat[eé]g/i.test(hl)) document.getElementById('sheets-col-cat').value = i;
+      if (/sous.?cat|sub/i.test(hl)) document.getElementById('sheets-col-subcat').value = i;
+    });
+    sheetsWizardStep(1);
+  } catch(e) {
+    errEl.textContent = e.message + '. Vérifie que la feuille est partagée en lecture publique.';
+    errEl.style.display = 'block';
+  } finally { icon.classList.remove('spin'); }
+}
+
+function sheetsWizardPreview() {
+  const colLabel = parseInt(document.getElementById('sheets-col-label').value);
+  const colCat = parseInt(document.getElementById('sheets-col-cat').value);
+  const colSubcatVal = document.getElementById('sheets-col-subcat').value;
+  const colSubcat = colSubcatVal !== '' ? parseInt(colSubcatVal) : -1;
+  // Build unique rules
+  const seen = new Map();
+  _sheetsData.forEach(row => {
+    const label = row[colLabel]?.trim();
+    const cat = row[colCat]?.trim();
+    if (!label || !cat) return;
+    const sub = colSubcat >= 0 ? (row[colSubcat]?.trim() || '') : '';
+    if (!seen.has(label.toLowerCase())) seen.set(label.toLowerCase(), {label, cat, sub});
+  });
+  const rules = [...seen.values()];
+  const infoEl = document.getElementById('sheets-preview-info');
+  const listEl = document.getElementById('sheets-preview-list');
+  infoEl.textContent = `${rules.length} règle${rules.length>1?'s':''} à créer depuis ${_sheetsData.length} lignes`;
+  if (!rules.length) { listEl.innerHTML = `<div style="font-size:13px;color:var(--muted);text-align:center;padding:20px 0">Aucune donnée valide trouvée avec ce mapping.</div>`; }
+  else {
+    listEl.innerHTML = rules.slice(0,50).map(r => `
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border)">
+        <div style="flex:1;min-width:0">
+          <div style="font-size:12px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${r.label}</div>
+          ${r.sub ? `<div style="font-size:11px;color:var(--muted)">${r.cat} › ${r.sub}</div>` : `<div style="font-size:11px;color:var(--muted)">${r.cat}</div>`}
+        </div>
+        <span style="font-size:10px;background:var(--surface);padding:2px 8px;border-radius:99px;color:var(--muted);flex-shrink:0">contient</span>
+      </div>`).join('') + (rules.length > 50 ? `<div style="font-size:11px;color:var(--muted);text-align:center;padding:8px 0">… et ${rules.length-50} autres</div>` : '');
+  }
+  window._sheetsRules = rules;
+  sheetsWizardStep(2);
+}
+
+function sheetsWizardImport() {
+  if (!window._sheetsRules?.length) return;
+  captureUndo('Import Google Sheets');
+  let created = 0;
+  window._sheetsRules.forEach(r => {
+    const norm = r.label.toLowerCase();
+    const exists = state.rules.some(rule => rule.pattern.toLowerCase() === norm);
+    if (exists) return;
+    // Auto-create category if missing
+    if (r.cat && !state.categories.find(c => c.name === r.cat)) {
+      const colors = ['#4285F4','#34A853','#FBBC04','#EA4335','#9C27B0','#FF5722','#00BCD4','#795548'];
+      state.categories.push({id: uuid(), name: r.cat, color: colors[state.categories.length % colors.length], subcategories: r.sub ? [r.sub] : []});
+    } else if (r.sub && r.cat) {
+      const cat = state.categories.find(c => c.name === r.cat);
+      if (cat && !cat.subcategories.includes(r.sub)) cat.subcategories.push(r.sub);
+    }
+    state.rules.push({id: uuid(), pattern: r.label, matchType: 'contains', type: '', category: r.cat, subcategory: r.sub || '', enabled: true});
+    created++;
+  });
+  // Apply to existing transactions
+  let applied = 0;
+  state.transactions.forEach(tx => { if (applyRulesToTx(tx)) applied++; });
+  saveState();
+  closeModal('modal-sheets-wizard');
+  renderRules(); updateRulesBadge();
+  if (state.currentScreen === 'dashboard') renderDashboard();
+  if (state.currentScreen === 'transactions') renderTransactions();
+  toast(`✓ ${created} règle${created>1?'s':''} créée${created>1?'s':''} · ${applied} transaction${applied>1?'s':''} catégorisée${applied>1?'s':''}`, true);
+}
+
+// ═══════════════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════════════
 function init(){
@@ -2571,6 +2937,15 @@ function init(){
   renderDashboard();
   setTimeout(updateRulesBadge, 500);
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+  // Ctrl+Z undo
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      if (_undoStack.length) undoAction();
+    }
+  });
+  // Onboarding first visit
+  if (!localStorage.getItem('fin2_onboarded')) setTimeout(showOnboarding, 600);
 }
 init();
 </script>
