@@ -1,4 +1,4 @@
-const CACHE_NAME = 'finance-pwa-v1';
+const CACHE_NAME = 'finance-pwa-v2';
 const ASSETS = [
   './index.html',
   './manifest.json',
@@ -21,16 +21,25 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  // Network first for external CDN resources
-  if (event.request.url.includes('cdn.jsdelivr') || 
-      event.request.url.includes('fonts.googleapis') ||
-      event.request.url.includes('fonts.gstatic')) {
+  const url = event.request.url;
+
+  // ── Network-only : Supabase (auth + API) — jamais mis en cache
+  if (url.includes('supabase.co')) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // ── Network-first : CDN externes + fonts
+  if (url.includes('cdn.jsdelivr') ||
+      url.includes('fonts.googleapis') ||
+      url.includes('fonts.gstatic')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
     );
     return;
   }
-  // Cache first for local assets
+
+  // ── Cache-first : assets locaux (index.html, manifest.json)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       return cached || fetch(event.request).then((response) => {

@@ -10,7 +10,7 @@
 <link rel="manifest" href="manifest.json"/>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700&family=Satoshi:wght@400;500;700&display=swap" rel="stylesheet"/>
@@ -550,6 +550,47 @@ nav {
 @keyframes spin { to { transform: rotate(360deg); } }
 .spin { animation: spin 0.75s linear infinite; display: inline-block; }
 
+/* ── LOGIN SCREEN ── */
+#login-screen {
+  position: fixed; inset: 0; z-index: 2000;
+  background: var(--bg); display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 32px 28px;
+  max-width: 430px; margin: 0 auto;
+}
+#login-screen.hidden { display: none; }
+.login-logo { font-family: 'Space Grotesk', sans-serif; font-size: 32px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+.login-sub { font-size: 13px; color: var(--muted); margin-bottom: 40px; text-align: center; }
+.login-form { width: 100%; display: flex; flex-direction: column; gap: 12px; }
+.login-input {
+  width: 100%; height: 48px; padding: 0 16px;
+  border: 1.5px solid var(--border); border-radius: 12px;
+  font-size: 14px; font-family: 'Satoshi', sans-serif; color: var(--text);
+  background: var(--bg); outline: none; transition: border-color 0.2s;
+}
+.login-input:focus { border-color: var(--text); }
+.login-btn-primary {
+  width: 100%; height: 48px; border-radius: 99px; border: none;
+  background: var(--text); color: white;
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: opacity 0.2s; margin-top: 4px;
+}
+.login-btn-primary:active { opacity: 0.8; }
+.login-btn-primary:disabled { opacity: 0.5; cursor: default; }
+.login-divider { display: flex; align-items: center; gap: 12px; margin: 4px 0; }
+.login-divider::before, .login-divider::after { content:''; flex:1; height:1px; background: var(--border); }
+.login-divider span { font-size: 11px; color: var(--muted); }
+.login-btn-google {
+  width: 100%; height: 48px; border-radius: 99px;
+  border: 1.5px solid var(--border); background: var(--bg);
+  display: flex; align-items: center; justify-content: center; gap: 10px;
+  font-family: 'Space Grotesk', sans-serif; font-size: 14px; font-weight: 600;
+  color: var(--text); cursor: pointer; transition: background 0.15s;
+}
+.login-btn-google:active { background: var(--surface); }
+.login-toggle { font-size: 12px; color: var(--muted); text-align: center; margin-top: 16px; }
+.login-toggle a { color: var(--text); font-weight: 600; cursor: pointer; text-decoration: none; }
+.login-error { font-size: 12px; color: var(--expense); text-align: center; min-height: 16px; }
+
 /* ── ONBOARDING ── */
 .onboard-overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,0.55);
@@ -591,6 +632,26 @@ nav {
 </style>
 </head>
 <body>
+<!-- ══════════ LOGIN SCREEN ══════════ -->
+<div id="login-screen">
+  <div class="login-logo">FinApp</div>
+  <div class="login-sub">Ton tableau de bord financier personnel</div>
+  <div class="login-form">
+    <input class="login-input" id="login-email" type="email" placeholder="Adresse e-mail" autocomplete="email"/>
+    <input class="login-input" id="login-password" type="password" placeholder="Mot de passe" autocomplete="current-password"/>
+    <div class="login-error" id="login-error"></div>
+    <button class="login-btn-primary" id="login-submit-btn" onclick="handleLogin()">Se connecter</button>
+    <div class="login-divider"><span>ou</span></div>
+    <button class="login-btn-google" onclick="handleGoogleLogin()">
+      <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.31-8.16 2.31-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/><path fill="none" d="M0 0h48v48H0z"/></svg>
+      Continuer avec Google
+    </button>
+    <div class="login-toggle" id="login-toggle-text">
+      Pas encore de compte ? <a onclick="toggleAuthMode()">S'inscrire</a>
+    </div>
+  </div>
+</div>
+
 <div id="app">
 
 <!-- ══════════ APP HEADER ══════════ -->
@@ -610,22 +671,33 @@ nav {
   <div class="settings-section">
     <div class="settings-section-title">Données</div>
     <div class="settings-row" onclick="closeSettings();nav('import')">
-      <div class="settings-row-icon" style="background:#e8f0fe">
-        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 87.3 78" width="18" height="16"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
-      </div>
-      <div class="settings-row-body">
-        <div class="settings-row-label">Google Drive</div>
-        <div class="settings-row-sub" id="settings-drive-status">Non connecté</div>
-      </div>
-      <span class="material-symbols-outlined settings-row-action" style="font-size:18px">chevron_right</span>
-    </div>
-    <div class="settings-row" onclick="closeSettings();nav('import')">
       <div class="settings-row-icon" style="background:#fce8e6">
         <span class="material-symbols-outlined" style="font-size:18px;color:#EA4335">delete_forever</span>
       </div>
       <div class="settings-row-body">
         <div class="settings-row-label">Vider la base de données</div>
         <div class="settings-row-sub">Supprimer toutes les transactions</div>
+      </div>
+      <span class="material-symbols-outlined settings-row-action" style="font-size:18px">chevron_right</span>
+    </div>
+  </div>
+  <div class="settings-section" style="margin-top:8px">
+    <div class="settings-section-title">Compte</div>
+    <div class="settings-row">
+      <div class="settings-row-icon" style="background:#e8f5e9">
+        <span class="material-symbols-outlined" style="font-size:18px;color:#388E3C">person</span>
+      </div>
+      <div class="settings-row-body">
+        <div class="settings-row-label">Connecté</div>
+        <div class="settings-row-sub" id="settings-user-email">—</div>
+      </div>
+    </div>
+    <div class="settings-row" onclick="handleLogout()">
+      <div class="settings-row-icon" style="background:#fff3e0">
+        <span class="material-symbols-outlined" style="font-size:18px;color:#F57C00">logout</span>
+      </div>
+      <div class="settings-row-body">
+        <div class="settings-row-label">Se déconnecter</div>
       </div>
       <span class="material-symbols-outlined settings-row-action" style="font-size:18px">chevron_right</span>
     </div>
@@ -653,54 +725,6 @@ nav {
   </div>
   <div style="padding:20px;margin-top:auto">
     <p style="font-size:11px;color:var(--muted);text-align:center">FinApp · Version locale</p>
-  </div>
-</div>
-
-<!-- ══════════ DRIVE SETUP MODAL ══════════ -->
-<div class="modal-overlay" id="modal-drive-setup">
-  <div class="modal" style="max-height:88dvh">
-    <div class="modal-handle"></div>
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
-      <h3 style="margin:0" id="drive-setup-title">Configurer Drive</h3>
-      <button onclick="closeModal('modal-drive-setup')" style="background:none;border:none;cursor:pointer;color:var(--muted)"><span class="material-symbols-outlined">close</span></button>
-    </div>
-    <div class="wizard-progress" style="margin-bottom:16px">
-      <div class="wizard-bar done" id="dsw-0"></div>
-      <div class="wizard-bar" id="dsw-1"></div>
-    </div>
-
-    <!-- Step 0: Folder -->
-    <div id="dsw-folder" class="wizard-step active">
-      <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Choisis un dossier existant dans ton Drive, ou crée-en un nouveau.</p>
-      <div id="dsw-folder-list" style="max-height:260px;overflow-y:auto;margin-bottom:12px">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Chargement…</div>
-      </div>
-      <div style="border-top:1px solid var(--border);padding-top:12px">
-        <div style="font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Créer un nouveau dossier</div>
-        <div style="display:flex;gap:8px">
-          <input class="form-input" id="dsw-new-folder" value="FinApp" style="flex:1"/>
-          <button onclick="driveSetupCreateFolder()" style="height:42px;padding:0 16px;border-radius:10px;border:none;background:var(--text);color:white;font-size:13px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif;flex-shrink:0">
-            <span id="dsw-create-folder-icon" class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">create_new_folder</span>
-          </button>
-        </div>
-      </div>
-    </div>
-
-    <!-- Step 1: File -->
-    <div id="dsw-file" class="wizard-step" style="display:none">
-      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface);border-radius:10px;margin-bottom:14px">
-        <span class="material-symbols-outlined" style="font-size:18px;color:#4285F4">folder</span>
-        <span style="font-size:13px;font-weight:600" id="dsw-selected-folder-name">—</span>
-        <button onclick="driveSetupShowFolders()" style="margin-left:auto;background:none;border:none;font-size:11px;color:var(--muted);cursor:pointer">Changer</button>
-      </div>
-      <p style="font-size:13px;color:var(--muted);margin-bottom:12px">Choisis un fichier de sauvegarde existant, ou crée-en un nouveau.</p>
-      <div id="dsw-file-list" style="max-height:220px;overflow-y:auto;margin-bottom:12px">
-        <div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Chargement…</div>
-      </div>
-      <button onclick="driveSetupCreateFile()" style="width:100%;height:42px;border-radius:99px;border:1.5px dashed var(--border);background:none;color:var(--text);font-size:13px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif">
-        <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">add</span> Créer finapp-data.json
-      </button>
-    </div>
   </div>
 </div>
 
@@ -832,49 +856,14 @@ nav {
 <div class="screen" id="screen-import">
   <div class="screen-top"><h2>Importer</h2></div>
 
-  <!-- Google Drive Sync -->
-  <div class="drive-card">
-    <div class="drive-card-header">
-      <svg class="drive-card-logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 87.3 78" width="22" height="20"><path d="m6.6 66.85 3.85 6.65c.8 1.4 1.95 2.5 3.3 3.3l13.75-23.8h-27.5c0 1.55.4 3.1 1.2 4.5z" fill="#0066da"/><path d="m43.65 25-13.75-23.8c-1.35.8-2.5 1.9-3.3 3.3l-25.4 44a9.06 9.06 0 0 0-1.2 4.5h27.5z" fill="#00ac47"/><path d="m73.55 76.8c1.35-.8 2.5-1.9 3.3-3.3l1.6-2.75 7.65-13.25c.8-1.4 1.2-2.95 1.2-4.5h-27.502l5.852 11.5z" fill="#ea4335"/><path d="m43.65 25 13.75-23.8c-1.35-.8-2.9-1.2-4.5-1.2h-18.5c-1.6 0-3.15.45-4.5 1.2z" fill="#00832d"/><path d="m59.8 53h-32.3l-13.75 23.8c1.35.8 2.9 1.2 4.5 1.2h50.8c1.6 0 3.15-.45 4.5-1.2z" fill="#2684fc"/><path d="m73.4 26.5-12.7-22c-.8-1.4-1.95-2.5-3.3-3.3l-13.75 23.8 16.15 28h27.45c0-1.55-.4-3.1-1.2-4.5z" fill="#ffba00"/></svg>
-      <span class="drive-card-title">Google Drive</span>
-      <span id="drive-status-dot" style="width:8px;height:8px;border-radius:50%;background:#ccc;display:inline-block;flex-shrink:0"></span>
+  <!-- Supabase Sync Status -->
+  <div style="margin: 0 20px 16px; padding: 14px 16px; background: var(--surface); border-radius: var(--radius); border: 1px solid var(--border);">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+      <span class="material-symbols-outlined" style="font-size:18px;color:#10b981">cloud_done</span>
+      <span style="font-size:13px;font-weight:600;font-family:'Space Grotesk',sans-serif;flex:1">Supabase — Sync cloud</span>
+      <span id="sync-status-dot" style="width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block"></span>
     </div>
-
-    <!-- Disconnected -->
-    <div id="drive-disconnected-ui">
-      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Synchronise tes données dans un dossier de ton choix sur Drive. Transactions, catégories et règles sauvegardées automatiquement.</p>
-      <button onclick="driveSignIn()" style="width:100%;height:36px;border-radius:99px;border:1.5px solid #4285F4;background:white;color:#4285F4;font-size:13px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif">
-        Se connecter à Google Drive
-      </button>
-    </div>
-
-    <!-- Connected -->
-    <div id="drive-connected-ui" style="display:none">
-      <div class="drive-path-wrap">
-        <div class="drive-path-row">
-          <span class="material-symbols-outlined drive-path-icon">folder</span>
-          <span class="drive-path-label" id="drive-folder-label">—</span>
-          <span class="drive-path-action" onclick="openDriveSetup('folder')">Changer</span>
-        </div>
-        <div class="drive-path-row">
-          <span class="material-symbols-outlined drive-path-icon">draft</span>
-          <span class="drive-path-label" id="drive-file-label">—</span>
-          <a class="drive-path-action" id="drive-open-link" href="#" target="_blank">Voir ↗</a>
-        </div>
-      </div>
-      <div style="font-size:11px;color:var(--muted);margin:8px 0 10px" id="drive-last-sync">Synchro auto activée</div>
-      <div class="drive-sync-actions">
-        <button class="drive-sync-btn" onclick="drivePush(true)">
-          <span id="drive-push-icon" class="material-symbols-outlined" style="font-size:14px">cloud_upload</span> Sauvegarder
-        </button>
-        <button class="drive-sync-btn" onclick="drivePull(true)">
-          <span class="material-symbols-outlined" style="font-size:14px">cloud_download</span> Restaurer
-        </button>
-      </div>
-      <button onclick="driveSignOut()" style="width:100%;margin-top:8px;height:30px;border-radius:99px;border:1px solid var(--border);background:none;color:var(--muted);font-size:11px;font-weight:600;cursor:pointer;font-family:'Space Grotesk',sans-serif">
-        Déconnecter
-      </button>
-    </div>
+    <div style="font-size:11px;color:var(--muted)" id="sync-status-label">Données synchronisées automatiquement</div>
   </div>
 
   <div id="import-stats-bar" style="display:none">
@@ -1299,6 +1288,107 @@ nav {
 
 <script>
 // ═══════════════════════════════════════════════════════════
+// SUPABASE INIT
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL = 'https://pfgzbvmgogoangxtlvsi.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBmZ3pidm1nb2dvYW5neHRsdnNpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4OTc1OTYsImV4cCI6MjA5MDQ3MzU5Nn0._iPTnpku8ItAcL7SqpVyL38qozjZaLtBaGD9zeND6XM';
+const _supa = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+let _currentUser = null;
+
+// ═══════════════════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════════════════
+let _authMode = 'login'; // 'login' | 'signup'
+
+function toggleAuthMode() {
+  _authMode = _authMode === 'login' ? 'signup' : 'login';
+  const btn = document.getElementById('login-submit-btn');
+  const toggle = document.getElementById('login-toggle-text');
+  document.getElementById('login-error').textContent = '';
+  if (_authMode === 'signup') {
+    btn.textContent = "S'inscrire";
+    toggle.innerHTML = 'Déjà un compte ? <a onclick="toggleAuthMode()">Se connecter</a>';
+  } else {
+    btn.textContent = 'Se connecter';
+    toggle.innerHTML = "Pas encore de compte ? <a onclick=\"toggleAuthMode()\">S'inscrire</a>";
+  }
+}
+
+async function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const password = document.getElementById('login-password').value;
+  const errEl = document.getElementById('login-error');
+  const btn = document.getElementById('login-submit-btn');
+  if (!email || !password) { errEl.textContent = 'Remplis tous les champs.'; return; }
+  btn.disabled = true;
+  btn.textContent = '…';
+  errEl.textContent = '';
+  let result;
+  if (_authMode === 'signup') {
+    result = await _supa.auth.signUp({ email, password });
+  } else {
+    result = await _supa.auth.signInWithPassword({ email, password });
+  }
+  btn.disabled = false;
+  btn.textContent = _authMode === 'signup' ? "S'inscrire" : 'Se connecter';
+  if (result.error) {
+    errEl.textContent = result.error.message;
+    return;
+  }
+  if (_authMode === 'signup' && !result.data.session) {
+    errEl.style.color = 'var(--income)';
+    errEl.textContent = 'Vérifie ton e-mail pour confirmer ton compte.';
+    return;
+  }
+}
+
+async function handleGoogleLogin() {
+  const { error } = await _supa.auth.signInWithOAuth({
+    provider: 'google',
+    options: { redirectTo: window.location.href }
+  });
+  if (error) toast('Erreur Google : ' + error.message);
+}
+
+async function handleLogout() {
+  await _supa.auth.signOut();
+  closeSettings();
+}
+
+function showLoginScreen() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.getElementById('app-header').style.display = 'none';
+  document.querySelectorAll('nav, .screen').forEach(el => el.style.display = 'none');
+}
+
+function hideLoginScreen(user) {
+  _currentUser = user;
+  document.getElementById('login-screen').classList.add('hidden');
+  document.getElementById('app-header').style.display = '';
+  document.querySelectorAll('nav').forEach(el => el.style.display = '');
+  const emailEl = document.getElementById('settings-user-email');
+  if (emailEl) emailEl.textContent = user.email;
+}
+
+// Listen for auth state changes
+_supa.auth.onAuthStateChange(async (event, session) => {
+  if (session && session.user) {
+    hideLoginScreen(session.user);
+    await loadState();
+    state.dashMonth = new Date();
+    state.txMonth = new Date();
+    state.analyticsMonth = new Date();
+    renderDashboard();
+    nav(state.currentScreen || 'dashboard');
+    setTimeout(updateRulesBadge, 500);
+    if (!localStorage.getItem('fin2_onboarded')) setTimeout(showOnboarding, 600);
+  } else {
+    _currentUser = null;
+    showLoginScreen();
+  }
+});
+
+// ═══════════════════════════════════════════════════════════
 // STATE
 // ═══════════════════════════════════════════════════════════
 const CAT_COLORS = ['#F4A261','#2A9D8F','#E9C46A','#E76F51','#264653','#e53a34','#6366f1','#f59e0b','#10b981','#3b82f6','#8b5cf6','#ec4899','#14b8a6','#f97316'];
@@ -1326,25 +1416,96 @@ let state = {
 };
 
 // ═══════════════════════════════════════════════════════════
-// PERSISTENCE
+// PERSISTENCE — SUPABASE
 // ═══════════════════════════════════════════════════════════
-function saveState() {
-  try {
-    localStorage.setItem('fin2_tx', JSON.stringify(state.transactions));
-    localStorage.setItem('fin2_cats', JSON.stringify(state.categories));
-    localStorage.setItem('fin2_rules', JSON.stringify(state.rules));
-  } catch(e) {}
-  if (typeof driveToken !== 'undefined' && driveToken) drivePush(false);
+async function saveState() {
+  if (!_currentUser) return;
+  const uid = _currentUser.id;
+
+  // --- TRANSACTIONS ---
+  // Upsert all transactions with user_id
+  if (state.transactions.length > 0) {
+    const txRows = state.transactions.map(tx => ({
+      id: tx.id, user_id: uid,
+      date: tx.date, label: tx.label, amount: tx.amount,
+      type: tx.type, category: tx.category || null,
+      subcategory: tx.subcategory || null
+    }));
+    await _supa.from('transactions').upsert(txRows, { onConflict: 'id' });
+  }
+
+  // --- CATEGORIES ---
+  const catRows = state.categories.map(c => ({
+    id: c.id, user_id: uid,
+    name: c.name, color: c.color,
+    subcategories: c.subcategories || []
+  }));
+  if (catRows.length > 0) {
+    await _supa.from('categories').upsert(catRows, { onConflict: 'id' });
+  }
+
+  // --- RULES ---
+  const ruleRows = state.rules.map(r => ({
+    id: r.id, user_id: uid,
+    pattern: r.pattern, match_type: r.matchType,
+    type: r.type || null, category: r.category || null,
+    subcategory: r.subcategory || null, enabled: r.enabled
+  }));
+  if (ruleRows.length > 0) {
+    await _supa.from('rules').upsert(ruleRows, { onConflict: 'id' });
+  }
 }
-function loadState() {
-  try {
-    const tx = localStorage.getItem('fin2_tx');
-    const cats = localStorage.getItem('fin2_cats');
-    const rules = localStorage.getItem('fin2_rules');
-    if (tx) state.transactions = JSON.parse(tx);
-    if (cats) state.categories = JSON.parse(cats);
-    if (rules) state.rules = JSON.parse(rules);
-  } catch(e) {}
+
+async function loadState() {
+  if (!_currentUser) return;
+
+  const [txRes, catRes, ruleRes] = await Promise.all([
+    _supa.from('transactions').select('*'),
+    _supa.from('categories').select('*'),
+    _supa.from('rules').select('*'),
+  ]);
+
+  if (txRes.data && txRes.data.length > 0) {
+    state.transactions = txRes.data.map(tx => ({
+      id: tx.id, date: tx.date, label: tx.label,
+      amount: tx.amount, type: tx.type,
+      category: tx.category || '', subcategory: tx.subcategory || ''
+    }));
+  }
+
+  if (catRes.data && catRes.data.length > 0) {
+    state.categories = catRes.data.map(c => ({
+      id: c.id, name: c.name, color: c.color,
+      subcategories: c.subcategories || []
+    }));
+  }
+
+  if (ruleRes.data && ruleRes.data.length > 0) {
+    state.rules = ruleRes.data.map(r => ({
+      id: r.id, pattern: r.pattern, matchType: r.match_type,
+      type: r.type || '', category: r.category || '',
+      subcategory: r.subcategory || '', enabled: r.enabled
+    }));
+  }
+}
+
+// Delete helpers needed for wipe and individual deletes
+async function _deleteFromSupabase(table, id) {
+  if (!_currentUser) return;
+  await _supa.from(table).delete().eq('id', id);
+}
+
+async function _deleteAllTransactions() {
+  if (!_currentUser) return;
+  await _supa.from('transactions').delete().eq('user_id', _currentUser.id);
+}
+
+async function _deleteCategoryFromSupabase(id) {
+  await _deleteFromSupabase('categories', id);
+}
+
+async function _deleteRuleFromSupabase(id) {
+  await _deleteFromSupabase('rules', id);
 }
 
 // ═══════════════════════════════════════════════════════════
@@ -1394,12 +1555,7 @@ function undoAction() {
   state.transactions = entry.snapshot.transactions;
   state.categories = entry.snapshot.categories;
   state.rules = entry.snapshot.rules;
-  try {
-    localStorage.setItem('fin2_tx', JSON.stringify(state.transactions));
-    localStorage.setItem('fin2_cats', JSON.stringify(state.categories));
-    localStorage.setItem('fin2_rules', JSON.stringify(state.rules));
-  } catch(e) {}
-  if (typeof driveToken !== 'undefined' && driveToken) drivePush(false);
+  saveState();
   closeSnackbar();
   nav(state.currentScreen || 'dashboard');
   toast('«\u202f' + entry.label + '\u202f» annulé');
@@ -1433,12 +1589,7 @@ function undoToIndex(idx) {
   state.transactions = entry.snapshot.transactions;
   state.categories = entry.snapshot.categories;
   state.rules = entry.snapshot.rules;
-  try {
-    localStorage.setItem('fin2_tx', JSON.stringify(state.transactions));
-    localStorage.setItem('fin2_cats', JSON.stringify(state.categories));
-    localStorage.setItem('fin2_rules', JSON.stringify(state.rules));
-  } catch(e) {}
-  if (typeof driveToken !== 'undefined' && driveToken) drivePush(false);
+  saveState();
   closeModal('modal-undo-history');
   nav(state.currentScreen || 'dashboard');
   toast('Restauré : «\u202f' + entry.label + '\u202f»');
@@ -2779,13 +2930,12 @@ function wipeCancel() {
   document.getElementById('wipe-confirm').style.display = 'none';
   document.getElementById('wipe-btn-1').style.display = 'flex';
 }
-function wipeConfirm() {
+async function wipeConfirm() {
+  await _deleteAllTransactions();
   state.transactions = [];
-  saveState();
   wipeCancel();
   document.getElementById('import-stats-bar').style.display = 'none';
   document.getElementById('drop-zone').style.display = 'flex';
-  // Remove rejects button if present
   const rejBtn = document.getElementById('rejects-debug-btn');
   if(rejBtn) rejBtn.remove();
   toast('Base de données vidée');
@@ -2794,197 +2944,23 @@ function wipeConfirm() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// GOOGLE DRIVE SYNC
+// INIT
 // ═══════════════════════════════════════════════════════════
-const DRIVE_CLIENT_ID = '327162145322-6lu56ufu27rdd6nriv4v8c5cavpent4a.apps.googleusercontent.com';
-const DRIVE_SCOPE = 'https://www.googleapis.com/auth/drive';
-const DRIVE_FILE_NAME = 'finapp-data.json';
-const DRIVE_FOLDER_NAME = 'FinApp';
-let driveToken = null;
-let driveSyncFileId = null;
-let driveFolderId = null;
-let driveTokenClient = null;
-
-function driveSignIn() {
-  if (!window.google) { toast('Chargement en cours…'); return; }
-  if (!driveTokenClient) {
-    driveTokenClient = google.accounts.oauth2.initTokenClient({
-      client_id: DRIVE_CLIENT_ID,
-      scope: DRIVE_SCOPE,
-      callback: async (resp) => {
-        if (resp.error) { toast('Connexion échouée : ' + resp.error); return; }
-        driveToken = resp.access_token;
-        localStorage.setItem('fin2_drive_connected', '1');
-        updateDriveUI(true);
-        await drivePull(false);
-        toast('Google Drive connecté ✓');
-      }
-    });
-  }
-  driveTokenClient.requestAccessToken();
-}
-
-function driveSignOut() {
-  if (driveToken) google.accounts.oauth2.revoke(driveToken, () => {});
-  driveToken = null;
-  driveSyncFileId = null;
-  driveFolderId = null;
-  localStorage.removeItem('fin2_drive_connected');
-  localStorage.removeItem('fin2_drive_folder_id');
-  localStorage.removeItem('fin2_drive_folder_name');
-  localStorage.removeItem('fin2_drive_file_id');
-  localStorage.removeItem('fin2_drive_file_name');
-  updateDriveUI(false);
-  toast('Google Drive déconnecté');
-}
-
-function updateDriveUI(connected) {
-  const dot = document.getElementById('drive-status-dot');
-  if (dot && !dot.classList.contains('spin')) dot.style.background = connected ? '#0A7A5A' : '#ccc';
-  const connectedUI = document.getElementById('drive-connected-ui');
-  const disconnectedUI = document.getElementById('drive-disconnected-ui');
-  if (connectedUI) connectedUI.style.display = connected ? 'block' : 'none';
-  if (disconnectedUI) disconnectedUI.style.display = connected ? 'none' : 'block';
-  // Update settings sidebar status
-  const settingsStatus = document.getElementById('settings-drive-status');
-  if (settingsStatus) settingsStatus.textContent = connected ? 'Connecté' : 'Non connecté';
-  // Update path labels from localStorage
-  if (connected) {
-    const fn = localStorage.getItem('fin2_drive_folder_name') || DRIVE_FOLDER_NAME;
-    const fl = localStorage.getItem('fin2_drive_file_name') || DRIVE_FILE_NAME;
-    const fid = localStorage.getItem('fin2_drive_folder_id') || driveFolderId;
-    const el = document.getElementById('drive-folder-label');
-    const fel = document.getElementById('drive-file-label');
-    const link = document.getElementById('drive-open-link');
-    if (el) el.textContent = fn;
-    if (fel) fel.textContent = fl;
-    if (link && fid) link.href = `https://drive.google.com/drive/folders/${fid}`;
-  }
-}
-
-async function driveGetFolder() {
-  if (driveFolderId) return driveFolderId;
-  // Check cached folder ID
-  const cachedId = localStorage.getItem('fin2_drive_folder_id');
-  if (cachedId) { driveFolderId = cachedId; return driveFolderId; }
-  try {
-    const q = encodeURIComponent(`name='${DRIVE_FOLDER_NAME}' and mimeType='application/vnd.google-apps.folder' and trashed=false`);
-    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
-      headers: { Authorization: `Bearer ${driveToken}` }
-    }).then(r => r.json());
-    if (r.files && r.files.length > 0) {
-      driveFolderId = r.files[0].id;
-      localStorage.setItem('fin2_drive_folder_id', driveFolderId);
-      localStorage.setItem('fin2_drive_folder_name', r.files[0].name);
-      return driveFolderId;
+function init(){
+  // Ctrl+Z undo
+  document.addEventListener('keydown', e => {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
+      e.preventDefault();
+      if (_undoStack.length) undoAction();
     }
-    // Create folder
-    const folder = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: DRIVE_FOLDER_NAME, mimeType: 'application/vnd.google-apps.folder' })
-    }).then(r => r.json());
-    driveFolderId = folder.id;
-    localStorage.setItem('fin2_drive_folder_id', driveFolderId);
-    localStorage.setItem('fin2_drive_folder_name', folder.name);
-    return driveFolderId;
-  } catch(e) { return null; }
-}
-
-async function driveFindFile() {
-  try {
-    const folderId = await driveGetFolder();
-    if (!folderId) return;
-    // Check cached file ID first
-    const cachedFileId = localStorage.getItem('fin2_drive_file_id');
-    if (cachedFileId) { driveSyncFileId = cachedFileId; return; }
-    const q = encodeURIComponent(`name='${DRIVE_FILE_NAME}' and '${folderId}' in parents and trashed=false`);
-    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&fields=files(id,name)`, {
-      headers: { Authorization: `Bearer ${driveToken}` }
-    }).then(r => r.json());
-    if (r.files && r.files.length > 0) {
-      driveSyncFileId = r.files[0].id;
-      localStorage.setItem('fin2_drive_file_id', driveSyncFileId);
-    }
-  } catch(e) {}
-}
-
-function _driveSpinner(on) {
-  const dot = document.getElementById('drive-status-dot');
-  const syncEl = document.getElementById('drive-last-sync');
-  if (on) {
-    if (dot) { dot.style.background = '#4285F4'; dot.classList.add('spin'); }
-    if (syncEl) syncEl.textContent = 'Sauvegarde en cours…';
-  } else {
-    if (dot) { dot.style.background = '#0A7A5A'; dot.classList.remove('spin'); }
-  }
-}
-
-async function drivePush(showToast = false) {
-  if (!driveToken) return;
-  _driveSpinner(true);
-  const body = JSON.stringify({
-    transactions: state.transactions,
-    categories: state.categories,
-    rules: state.rules,
-    savedAt: new Date().toISOString()
   });
-  try {
-    if (!driveSyncFileId) await driveFindFile();
-    if (driveSyncFileId) {
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveSyncFileId}?uploadType=media`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-        body
-      });
-    } else {
-      const folderId = await driveGetFolder();
-      const meta = await fetch('https://www.googleapis.com/drive/v3/files?fields=id', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: DRIVE_FILE_NAME, parents: folderId ? [folderId] : [] })
-      }).then(r => r.json());
-      driveSyncFileId = meta.id;
-      await fetch(`https://www.googleapis.com/upload/drive/v3/files/${driveSyncFileId}?uploadType=media`, {
-        method: 'PATCH',
-        headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-        body
-      });
-    }
-    _driveSpinner(false);
-    const now = new Date().toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
-    const el = document.getElementById('drive-last-sync');
-    if (el) el.textContent = `Dernière sauvegarde : ${now}`;
-    if (showToast) toast('Sauvegardé sur Drive ✓');
-  } catch(e) {
-    _driveSpinner(false);
-    if (showToast) toast('Erreur Drive : ' + e.message);
-  }
+  // Auth state is handled by onAuthStateChange listener above
+  // Check for existing session on load
+  _supa.auth.getSession().then(({ data: { session } }) => {
+    if (!session) showLoginScreen();
+  });
 }
-
-async function drivePull(showToast = false) {
-  if (!driveToken) return;
-  try {
-    await driveFindFile();
-    if (!driveSyncFileId) { await drivePush(false); return; }
-    const data = await fetch(`https://www.googleapis.com/drive/v3/files/${driveSyncFileId}?alt=media`, {
-      headers: { Authorization: `Bearer ${driveToken}` }
-    }).then(r => r.json());
-    if (data.transactions) state.transactions = data.transactions;
-    if (data.categories) state.categories = data.categories;
-    if (data.rules) state.rules = data.rules;
-    saveState();
-    renderDashboard();
-    nav(state.currentScreen || 'dashboard');
-    const savedAt = data.savedAt ? new Date(data.savedAt).toLocaleString('fr-FR', {day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}) : '—';
-    const el = document.getElementById('drive-last-sync');
-    if (el) el.textContent = `Restauré depuis le ${savedAt}`;
-    if (showToast) toast('Données restaurées depuis Drive ✓');
-  } catch(e) {
-    if (showToast) toast('Erreur Drive : ' + e.message);
-  }
-}
-
+init();
 // ═══════════════════════════════════════════════════════════
 // SETTINGS DRAWER
 // ═══════════════════════════════════════════════════════════
@@ -2998,135 +2974,13 @@ function closeSettings() {
 }
 
 // ═══════════════════════════════════════════════════════════
-// DRIVE SETUP WIZARD
-// ═══════════════════════════════════════════════════════════
-let _dsSelectedFolderId = null;
-let _dsSelectedFolderName = null;
-
-function openDriveSetup(startStep) {
-  _dsSelectedFolderId = driveFolderId;
-  _dsSelectedFolderName = localStorage.getItem('fin2_drive_folder_name') || DRIVE_FOLDER_NAME;
-  driveSetupShowFolders();
-  document.getElementById('modal-drive-setup').classList.add('open');
-}
-
-async function driveSetupShowFolders() {
-  document.getElementById('dsw-folder').style.display = 'block';
-  document.getElementById('dsw-file').style.display = 'none';
-  document.getElementById('dsw-0').className = 'wizard-bar done';
-  document.getElementById('dsw-1').className = 'wizard-bar';
-  const listEl = document.getElementById('dsw-folder-list');
-  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Chargement…</div>';
-  if (!driveToken) { listEl.innerHTML = '<div style="font-size:12px;color:var(--expense);padding:10px 0">Connecte-toi d\'abord à Google Drive.</div>'; return; }
-  try {
-    const q = encodeURIComponent(`mimeType='application/vnd.google-apps.folder' and trashed=false`);
-    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&fields=files(id,name,modifiedTime)&pageSize=50`, {
-      headers: { Authorization: `Bearer ${driveToken}` }
-    }).then(r => r.json());
-    const folders = r.files || [];
-    if (!folders.length) { listEl.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px 0;text-align:center">Aucun dossier trouvé dans ton Drive.</div>'; return; }
-    listEl.innerHTML = folders.map(f => `
-      <div class="drive-setup-item${f.id === _dsSelectedFolderId ? ' selected' : ''}" onclick="driveSetupSelectFolder('${f.id}','${f.name.replace(/'/g,"\\'")}')">
-        <div class="ds-icon"><span class="material-symbols-outlined" style="font-size:18px;color:#4285F4">folder</span></div>
-        <div style="flex:1;min-width:0">
-          <div class="ds-name">${f.name}</div>
-        </div>
-        ${f.id === _dsSelectedFolderId ? '<span class="material-symbols-outlined" style="font-size:18px;color:var(--income)">check_circle</span>' : ''}
-      </div>`).join('');
-  } catch(e) {
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--expense);padding:10px 0">${e.message}</div>`;
-  }
-}
-
-async function driveSetupCreateFolder() {
-  const name = document.getElementById('dsw-new-folder').value.trim();
-  if (!name) return;
-  const icon = document.getElementById('dsw-create-folder-icon');
-  icon.classList.add('spin');
-  try {
-    const folder = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, mimeType: 'application/vnd.google-apps.folder' })
-    }).then(r => r.json());
-    driveSetupSelectFolder(folder.id, folder.name);
-  } catch(e) { toast('Erreur: ' + e.message); }
-  finally { icon.classList.remove('spin'); }
-}
-
-async function driveSetupSelectFolder(id, name) {
-  _dsSelectedFolderId = id;
-  _dsSelectedFolderName = name;
-  driveFolderId = id;
-  localStorage.setItem('fin2_drive_folder_id', id);
-  localStorage.setItem('fin2_drive_folder_name', name);
-  driveSyncFileId = null;
-  localStorage.removeItem('fin2_drive_file_id');
-  // Go to file step
-  document.getElementById('dsw-folder').style.display = 'none';
-  document.getElementById('dsw-file').style.display = 'block';
-  document.getElementById('dsw-0').className = 'wizard-bar done';
-  document.getElementById('dsw-1').className = 'wizard-bar done';
-  document.getElementById('dsw-selected-folder-name').textContent = name;
-  // Load files in folder
-  const listEl = document.getElementById('dsw-file-list');
-  listEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--muted);font-size:12px">Chargement…</div>';
-  try {
-    const q = encodeURIComponent(`'${id}' in parents and trashed=false and mimeType!='application/vnd.google-apps.folder'`);
-    const r = await fetch(`https://www.googleapis.com/drive/v3/files?q=${q}&orderBy=name&fields=files(id,name,modifiedTime)&pageSize=50`, {
-      headers: { Authorization: `Bearer ${driveToken}` }
-    }).then(r => r.json());
-    const files = r.files || [];
-    if (!files.length) { listEl.innerHTML = '<div style="font-size:12px;color:var(--muted);padding:10px 0;text-align:center">Aucun fichier dans ce dossier.</div>'; return; }
-    listEl.innerHTML = files.map(f => `
-      <div class="drive-setup-item" onclick="driveSetupSelectFile('${f.id}','${f.name.replace(/'/g,"\\'")}')">
-        <div class="ds-icon"><span class="material-symbols-outlined" style="font-size:18px;color:var(--muted)">draft</span></div>
-        <div style="flex:1;min-width:0">
-          <div class="ds-name">${f.name}</div>
-          <div class="ds-sub">${new Date(f.modifiedTime).toLocaleDateString('fr-FR')}</div>
-        </div>
-      </div>`).join('');
-  } catch(e) {
-    listEl.innerHTML = `<div style="font-size:12px;color:var(--expense);padding:10px 0">${e.message}</div>`;
-  }
-}
-
-async function driveSetupCreateFile() {
-  const folderId = _dsSelectedFolderId;
-  if (!folderId) return;
-  const body = JSON.stringify({ transactions: state.transactions, categories: state.categories, rules: state.rules, savedAt: new Date().toISOString() });
-  try {
-    const meta = await fetch('https://www.googleapis.com/drive/v3/files?fields=id,name', {
-      method: 'POST',
-      headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name: DRIVE_FILE_NAME, parents: [folderId] })
-    }).then(r => r.json());
-    await fetch(`https://www.googleapis.com/upload/drive/v3/files/${meta.id}?uploadType=media`, {
-      method: 'PATCH',
-      headers: { Authorization: `Bearer ${driveToken}`, 'Content-Type': 'application/json' },
-      body
-    });
-    driveSetupSelectFile(meta.id, meta.name);
-  } catch(e) { toast('Erreur: ' + e.message); }
-}
-
-function driveSetupSelectFile(id, name) {
-  driveSyncFileId = id;
-  localStorage.setItem('fin2_drive_file_id', id);
-  localStorage.setItem('fin2_drive_file_name', name);
-  closeModal('modal-drive-setup');
-  updateDriveUI(true);
-  toast('Emplacement Drive configuré ✓');
-}
-
-// ═══════════════════════════════════════════════════════════
 // ONBOARDING
 // ═══════════════════════════════════════════════════════════
 const OB_STEPS = [
   { icon:'💸', title:'Bienvenue sur FinApp', desc:'Ton tableau de bord financier personnel. Importe tes transactions, catégorise-les et visualise tes habitudes de dépenses.' },
   { icon:'📂', title:'Importe tes transactions', desc:'Glisse un fichier .xlsx ou .csv de ta banque dans l\'onglet Import. FinApp détecte automatiquement les colonnes et nettoie les montants.' },
   { icon:'🏷️', title:'Catégorise intelligemment', desc:'Crée des règles pour catégoriser automatiquement tes transactions récurrentes. Importe aussi ta liste de contreparties depuis Google Sheets.' },
-  { icon:'☁️', title:'Synchronisation Drive', desc:'Connecte ton Google Drive pour sauvegarder automatiquement toutes tes données : transactions, catégories et règles. Accessible partout.' },
+  { icon:'☁️', title:'Données dans le cloud', desc:'Tes données sont synchronisées automatiquement via Supabase. Accessibles depuis n\'importe quel appareil après connexion.' },
 ];
 let _obStep = 0;
 
@@ -3135,7 +2989,6 @@ function showOnboarding() {
   _renderObStep();
   const overlay = document.getElementById('onboard-overlay');
   overlay.classList.remove('hidden');
-  // Swipe support
   const card = overlay.querySelector('.onboard-card');
   let _tStartX = 0;
   card.addEventListener('touchstart', e => { _tStartX = e.touches[0].clientX; }, {passive:true});
@@ -3191,7 +3044,6 @@ async function sheetsWizardFetch() {
   const errEl = document.getElementById('sheets-url-error');
   errEl.style.display = 'none';
   const icon = document.getElementById('sheets-fetch-icon');
-  // Extract sheet ID
   const m = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9_-]+)/);
   if (!m) { errEl.textContent = 'URL invalide. Copie l\'URL complète depuis ton navigateur.'; errEl.style.display = 'block'; return; }
   const sheetId = m[1];
@@ -3207,11 +3059,9 @@ async function sheetsWizardFetch() {
     if (rows.length < 2) throw new Error('La feuille semble vide');
     _sheetsHeaders = rows[0];
     _sheetsData = rows.slice(1).filter(r => r.some(c => c));
-    // Populate column selects
     const opts = _sheetsHeaders.map((h,i) => `<option value="${i}">${h || 'Colonne '+(i+1)}</option>`).join('');
     ['sheets-col-label','sheets-col-cat'].forEach(id => document.getElementById(id).innerHTML = opts);
     document.getElementById('sheets-col-subcat').innerHTML = '<option value="">— Aucune —</option>' + opts;
-    // Auto-detect columns
     _sheetsHeaders.forEach((h,i) => {
       const hl = h.toLowerCase();
       if (/libel|label|tiers|nom|contre|payee/i.test(hl)) document.getElementById('sheets-col-label').value = i;
@@ -3230,7 +3080,6 @@ function sheetsWizardPreview() {
   const colCat = parseInt(document.getElementById('sheets-col-cat').value);
   const colSubcatVal = document.getElementById('sheets-col-subcat').value;
   const colSubcat = colSubcatVal !== '' ? parseInt(colSubcatVal) : -1;
-  // Build unique rules
   const seen = new Map();
   _sheetsData.forEach(row => {
     const label = row[colLabel]?.trim();
@@ -3266,7 +3115,6 @@ function sheetsWizardImport() {
     const norm = r.label.toLowerCase();
     const exists = state.rules.some(rule => rule.pattern.toLowerCase() === norm);
     if (exists) return;
-    // Auto-create category if missing
     if (r.cat && !state.categories.find(c => c.name === r.cat)) {
       const colors = ['#4285F4','#34A853','#FBBC04','#EA4335','#9C27B0','#FF5722','#00BCD4','#795548'];
       state.categories.push({id: uuid(), name: r.cat, color: colors[state.categories.length % colors.length], subcategories: r.sub ? [r.sub] : []});
@@ -3277,7 +3125,6 @@ function sheetsWizardImport() {
     state.rules.push({id: uuid(), pattern: r.label, matchType: 'contains', type: '', category: r.cat, subcategory: r.sub || '', enabled: true});
     created++;
   });
-  // Apply to existing transactions
   let applied = 0;
   state.transactions.forEach(tx => { if (applyRulesToTx(tx)) applied++; });
   saveState();
@@ -3287,27 +3134,6 @@ function sheetsWizardImport() {
   if (state.currentScreen === 'transactions') renderTransactions();
   toast(`✓ ${created} règle${created>1?'s':''} créée${created>1?'s':''} · ${applied} transaction${applied>1?'s':''} catégorisée${applied>1?'s':''}`, true);
 }
-
-// ═══════════════════════════════════════════════════════════
-// INIT
-// ═══════════════════════════════════════════════════════════
-function init(){
-  loadState();
-  state.dashMonth=new Date();state.txMonth=new Date();state.analyticsMonth=new Date();
-  renderDashboard();
-  setTimeout(updateRulesBadge, 500);
-  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
-  // Ctrl+Z undo
-  document.addEventListener('keydown', e => {
-    if ((e.ctrlKey || e.metaKey) && e.key === 'z' && !e.shiftKey) {
-      e.preventDefault();
-      if (_undoStack.length) undoAction();
-    }
-  });
-  // Onboarding first visit
-  if (!localStorage.getItem('fin2_onboarded')) setTimeout(showOnboarding, 600);
-}
-init();
 </script>
 </body>
 </html>
